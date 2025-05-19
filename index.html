@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tipig | A Photography Exhibition</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital@0;1&family=Lora:ital@0;1&family=Petit+Formal+Script&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="ambient-audio">
+    <audio id="ambient-sound" loop>
+      <source src="https://assets.mixkit.co/active_storage/sfx/212/212-preview.mp3" type="audio/mpeg">
+    </audio>
+    <button id="audio-toggle" aria-label="Toggle ambient sound">
+      <span class="audio-icon">♪</span>
+    </button>
+  </div>
+
+  <nav class="site-navigation">
+    <div class="nav-content">
+      <h1 class="site-title">Tipig</h1>
+      <ul class="nav-links">
+        <li><a href="#gallery" class="nav-link">Gallery</a></li>
+        <li><a href="#about" class="nav-link">About</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="site-header">
+    <div class="header-content">
+      <h1 class="main-title">Tipig</h1>
+      <p class="tagline">A collection of preserved memories</p>
+    </div>
+  </header>
+
+  <main>
+    <section id="gallery" class="gallery-section">
+      <div class="gallery-intro">
+        <h2>The Exhibition</h2>
+        <p>Each photograph captures a moment in time—imperfect yet beautiful. Take your time. Explore slowly.</p>
+      </div>
+      
+      <div class="gallery-container">
+        <div class="gallery-item">
+          <div class="artwork">
+            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05" alt="Foggy mountain summit" loading="lazy">
+            <div class="artwork-details">
+              <h3>Morning Ascent</h3>
+              <p class="description">The fog clung to the mountain as we climbed. I remember the silence—how the mist seemed to absorb every sound but our breathing.</p>
+              <p class="date">Summer, 2019</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="artwork">
+            <img src="https://images.unsplash.com/photo-1482938289607-e9573fc25ebb" alt="River between mountains" loading="lazy">
+            <div class="artwork-details">
+              <h3>Valley Stream</h3>
+              <p class="description">We had been walking for hours when the valley opened before us. The water was colder than I expected when I dipped my hands.</p>
+              <p class="date">Autumn, 2020</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="artwork">
+            <img src="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9" alt="Pine trees in forest" loading="lazy">
+            <div class="artwork-details">
+              <h3>Ancient Grove</h3>
+              <p class="description">Standing here felt like stepping into another time. The trees have witnessed centuries—our brief moment among them a mere blink.</p>
+              <p class="date">Spring, 2021</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="artwork">
+            <img src="https://images.unsplash.com/photo-1523712999610-f77fbcfc3843" alt="Forest heated by sunbeam" loading="lazy">
+            <div class="artwork-details">
+              <h3>Light Cathedral</h3>
+              <p class="description">We were about to leave when the sun broke through. For just a few minutes, the forest became a sanctuary of light.</p>
+              <p class="date">Winter, 2022</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="artwork">
+            <img src="https://images.unsplash.com/photo-1500673922987-e212871fec22" alt="Yellow lights between trees" loading="lazy">
+            <div class="artwork-details">
+              <h3>Golden Hour</h3>
+              <p class="description">The day was ending, but we lingered. Something about how the light painted everything gold made me want to stay forever.</p>
+              <p class="date">Summer, 2022</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="artwork">
+            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb" alt="Water surrounded by trees" loading="lazy">
+            <div class="artwork-details">
+              <h3>Mirror Lake</h3>
+              <p class="description">The still water created a perfect reflection. I remember thinking how nothing is ever truly still if you look closely enough.</p>
+              <p class="date">Summer, 2023</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="about-section">
+      <div class="about-content">
+        <h2>About Tipig</h2>
+        <div class="about-text">
+          <p><em>Tipig</em> is a personal photography project dedicated to preserving memories in their raw, unedited form. The word "tipig" speaks to careful collection and preservation—a gathering of moments as they truly were.</p>
+          
+          <p>Unlike traditional photography that often seeks perfection, this collection embraces imperfection. Each photograph is displayed exactly as it was captured—no cropping, no color adjustment, no editing. In this way, the images remain authentic to the memories they represent.</p>
+          
+          <p>As you move through this exhibition, I invite you to view each image not just as a photograph but as a preserved moment in time—a memory made tangible, complete with all its beautiful imperfections.</p>
+        </div>
+        <div class="signature">
+          <p>— Your Name</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="current-year"></span> Tipig. All rights reserved.</p>
+  </footer>
+
+  <div id="lightbox" class="lightbox">
+    <div class="lightbox-content">
+      <button class="close-lightbox">&times;</button>
+      <img id="lightbox-image" src="" alt="">
+      <div id="lightbox-details" class="lightbox-details">
+        <h3 id="lightbox-title"></h3>
+        <p id="lightbox-description" class="description"></p>
+        <p id="lightbox-date" class="date"></p>
+      </div>
+      <div class="lightbox-navigation">
+        <button id="prev-image" class="nav-button">&lsaquo;</button>
+        <button id="next-image" class="nav-button">&rsaquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
