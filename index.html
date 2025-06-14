@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tipig - A Photography Collection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Audio element for ambient sound -->
+    <audio id="ambient-audio" loop preload="none">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkrBihy2O7GcyEEMH3J89OFOAgTUqzn4IhgEAxtq+nnm0wOC0ys6OCQQwkSWq7t5I5aFQhIqOPxw2qyBStvy/DJfC8ELn/K8c+COQgTXrHq36lXFAhLoMr1vX4rBCxyx+3FeSIFKXrI8tyLPAgQV67m44xaFAhOo+PSgzAFKXHL8Mp2JA8kfcn1y3wuBCRyx+3BdyQGLn3K9c2EOwgSU6jk45FSEglOpung3hMCBy1vz/LNeSsGLX3L9c2BPAcQU6Xj4J9SEQZNq+XlngMGCjV12/PLeyYGLH3K9M2COA8RTKri4IhgEwhOpungn0wOAk+t5OKRUwsGVq7n4I5DEC" type="audio/wav">
+        Your browser doesn't support the audio element.
+    </audio>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="site-title">Tipig</h1>
+            <p class="site-subtitle">A Collection of Imperfect Memories</p>
+            
+            <!-- Navigation -->
+            <nav class="nav">
+                <a href="#gallery" class="nav-link">Gallery</a>
+                <a href="#about" class="nav-link">About</a>
+                <button id="audio-toggle" class="audio-toggle" aria-label="Toggle ambient audio" title="Toggle ambient audio">
+                    <span class="audio-icon">🎵</span>
+                    <span class="audio-label">Audio</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Gallery Section -->
+        <section id="gallery" class="gallery-section">
+            <div class="container">
+                <h2 class="section-title">Gallery</h2>
+                <div class="gallery-grid" id="gallery-grid">
+                    <!-- Photos will be loaded here by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="about-section">
+            <div class="container">
+                <div class="about-content">
+                    <h2 class="section-title">About Tipig</h2>
+                    <div class="about-text">
+                        <p class="philosophy">
+                            Tipig is a Tagalog word meaning 'to save' or 'to preserve.' This collection celebrates the beauty found in imperfect memories—the blurred photographs, the overexposed moments, the slightly out-of-focus scenes that somehow capture more truth than technical perfection ever could.
+                        </p>
+                        <p class="description">
+                            Each photograph in this collection represents a memory preserved not for its technical excellence, but for its emotional resonance. Like the artifacts in a museum, these images are curated moments that speak to the universal human experience of remembering, of holding onto fleeting time, of finding profound beauty in the imperfect and ephemeral.
+                        </p>
+                        <p class="mission">
+                            In our age of digital perfection and filtered reality, Tipig stands as a testament to the power of authentic moments. These photographs invite contemplation, asking viewers to slow down and appreciate the subtle poetry found in everyday imperfection.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for full-size image viewing -->
+    <div id="modal" class="modal" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
+        <div class="modal-overlay" id="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close" aria-label="Close modal">&times;</button>
+            <div class="modal-image-container">
+                <img id="modal-image" src="" alt="" class="modal-image">
+            </div>
+            <div class="modal-caption">
+                <h3 id="modal-title" class="modal-photo-title"></h3>
+                <p id="modal-photo-caption" class="modal-photo-text"></p>
+            </div>
+            <div class="modal-navigation">
+                <button id="modal-prev" class="modal-nav-btn" aria-label="Previous photo">‹</button>
+                <button id="modal-next" class="modal-nav-btn" aria-label="Next photo">›</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Tipig. Preserving imperfect memories as art.</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
