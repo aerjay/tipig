@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "vite",
     "predev": "npm run build:albums",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run typecheck && vite build",
     "prebuild": "npm run build:albums",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "preverify": "npm run build:albums",
+    "verify": "npm run typecheck && npm test && npm run test:e2e",
     "measure": "tsx scripts/measure.ts",
     "build:albums": "tsx scripts/build-albums.ts"
   },

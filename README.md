@@ -29,6 +29,7 @@ npm run preview    # serve the production build locally
 npm run typecheck  # type-check only (tsc --noEmit)
 npm test           # unit tests (Vitest) — pure logic
 npm run test:e2e   # end-to-end tests (Playwright) — auto-starts the dev server
+npm run verify     # regenerate albums, then typecheck + unit + e2e (full gate)
 ```
 
 ### Tests
@@ -54,7 +55,7 @@ npm run test:e2e   # end-to-end tests (Playwright) — auto-starts the dev serve
   `album.json`. One country = one album; list its cities/towns in `places`.
 - `src/data/albums.ts` — **auto-generated; do not edit by hand.** Built from the
   folders above by `npm run build:albums` (which also runs automatically before
-  `npm run dev` and `npm run build`).
+  `npm run dev`, `npm run build`, and `npm run verify`).
 - `scripts/build-albums.ts` — the generator. `scripts/measure.ts` reads image
   aspect ratios (`npm run measure` to spot-check a folder). Both run via `tsx`.
 
@@ -70,7 +71,9 @@ npm run test:e2e   # end-to-end tests (Playwright) — auto-starts the dev serve
    ```
    Optional keys: `"title"` (override the auto Title-case, e.g. `"USA"`) and
    `"cover"` (a different photo filename, e.g. `"03.jpeg"`).
-4. Run `npm run build:albums` (or just `npm run dev`, which regenerates first).
+4. Run `npm run verify` — regenerates `src/data/albums.ts` from the folder,
+   then runs typecheck + unit + e2e to confirm the new album is wired up.
+   (To just preview it instead, `npm run dev` regenerates first too.)
 
 Everything else is derived from the folder: `id` (`japan-2027`), `title`
 (`Japan`), date (`March 2027`), each photo's aspect ratio, and the album's
