@@ -18,7 +18,8 @@ import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 // Each layer keeps a stable React key (the location key), so the settled view
 // is never remounted when a transition ends — without this, every photo's
 // lazy fade-in would re-run and flicker.
-const EASE = [0.7, 0, 0.3, 1];
+// 4-tuple (not number[]) so it matches framer-motion's cubic-bezier Easing type.
+const EASE: [number, number, number, number] = [0.7, 0, 0.3, 1];
 const DURATION = 0.6; // seconds
 
 // `active` is true for the settled/incoming layer and false for the outgoing
