@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 //
 // `prefers-reduced-motion` is honoured purely in CSS (.ph override), which
 // pins opacity/transform and removes the transition.
-export function Placeholder({ src, ratio, aspect, alt = "", lazyFade = true }) {
+export function Placeholder({ src, ratio, aspect, alt = "" }) {
   let ar;
   if (typeof ratio === "number" && isFinite(ratio) && ratio > 0) {
     ar = `${ratio}`;
@@ -20,7 +20,7 @@ export function Placeholder({ src, ratio, aspect, alt = "", lazyFade = true }) {
   }
 
   const wrapRef = useRef(null);
-  const [visible, setVisible] = useState(!lazyFade);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (visible) return;

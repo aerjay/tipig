@@ -2,7 +2,6 @@
 // Source of truth: design_handoff_tipig_gallery/SPEC.md §2.
 export const D2 = {
   bg: "#15130f", // page background — dark walnut/near-black
-  bgSoft: "#1c1a15", // subtle elevation (kept for variations)
   ink: "#ece4d2", // primary text — warm cream
   inkSoft: "#8a8170", // secondary text — dust
   rule: "#2a2620", // hairlines / dividers
