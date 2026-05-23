@@ -1,21 +1,20 @@
 import { D2 } from "../theme";
+import { bySize, pageX } from "../lib/responsive";
 
 // The compact 3-tier title block: Country / Cities / Date (SPEC §7.1).
 // Centered and deliberately small — the photos are the focus, not the title.
 export function AlbumTitle({ album, size }) {
   const compact = size === "mobile";
-  const mid = size === "tablet";
-  const padX = compact ? 22 : mid ? 36 : 56;
   return (
     <section
       style={{
-        padding: `${compact ? 28 : mid ? 36 : 44}px ${padX}px ${compact ? 6 : 10}px`,
+        padding: `${bySize(size, 28, 36, 44)}px ${pageX(size)}px ${compact ? 6 : 10}px`,
         textAlign: "center",
       }}
     >
       <h1
         style={{
-          font: `400 ${compact ? "24px" : mid ? "30px" : "34px"}/1 ${D2.serif}`,
+          font: `400 ${bySize(size, "24px", "30px", "34px")}/1 ${D2.serif}`,
           margin: 0,
           letterSpacing: "0.22em",
           color: D2.ink,

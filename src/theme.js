@@ -11,4 +11,6 @@ export const D2 = {
   serifBody: "'Cormorant Garamond', Georgia, serif", // italic body / quotes
   sans: "'IBM Plex Sans', 'Helvetica Neue', system-ui, sans-serif", // UI / body
   mono: "'IBM Plex Mono', ui-monospace, monospace", // eyebrows / dates / meta
+  coverShadow: "0 28px 70px -30px rgba(0,0,0,0.85)", // home grid covers
+  photoShadow: "0 24px 60px -30px rgba(0,0,0,0.75)", // album gallery photos
 };

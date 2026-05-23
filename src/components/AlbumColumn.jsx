@@ -1,31 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { D2 } from "../theme";
 import { Placeholder } from "./Placeholder";
 import { buildJustifiedRows } from "../lib/justified";
+import { bySize, pageX } from "../lib/responsive";
 
 // The core album layout (SPEC §7.2). On tablet+ it runs the justified-strips
 // algorithm against the live container width (measured via ResizeObserver, so
 // the layout recomputes on viewport resize). On mobile it falls back to a
 // plain single column at natural aspect.
-export function AlbumColumn({ album, size, tweaks }) {
+export function AlbumColumn({ album, size }) {
   const compact = size === "mobile";
-  const mid = size === "tablet";
-  const padX = compact ? 22 : mid ? 36 : 56;
-  const padTop = compact ? 28 : mid ? 36 : 48;
-  const colWidth = compact ? "100%" : mid ? "100%" : "min(1500px, 92%)";
-
-  const tight = tweaks.density === "tight";
-  const targetRowHeight = compact ? 360 : mid ? 340 : tight ? 360 : 460;
-  const gutter = compact ? 26 : mid ? 38 : tight ? 32 : 64;
-
-  // Aspect tweak: "uniform" coerces every photo to 3:2 landscape.
-  const photos = useMemo(
-    () =>
-      album.photos.map((p) =>
-        tweaks.aspect === "uniform" ? { ...p, ratio: 1.5 } : p
-      ),
-    [album, tweaks.aspect]
-  );
+  const colWidth = bySize(size, "100%", "100%", "min(1500px, 92%)");
+  const targetRowHeight = bySize(size, 360, 340, 460);
+  const gutter = bySize(size, 26, 38, 64);
 
   const containerRef = useRef(null);
   const [measuredWidth, setMeasuredWidth] = useState(0);
@@ -41,17 +28,17 @@ export function AlbumColumn({ album, size, tweaks }) {
   }, []);
 
   return (
-    <section style={{ padding: `${padTop}px ${padX}px 0` }}>
+    <section style={{ padding: `${bySize(size, 28, 36, 48)}px ${pageX(size)}px 0` }}>
       <div ref={containerRef} style={{ width: colWidth, margin: "0 auto" }}>
         {compact ? (
-          <MobileColumn photos={photos} gutter={gutter} album={album} />
+          <PhotoColumn photos={album.photos} gutter={gutter} alt={album.title} />
         ) : measuredWidth > 0 ? (
           <JustifiedRows
-            photos={photos}
+            photos={album.photos}
             width={measuredWidth}
             targetRowHeight={targetRowHeight}
             gutter={gutter}
-            album={album}
+            alt={album.title}
           />
         ) : null}
       </div>
@@ -62,7 +49,7 @@ export function AlbumColumn({ album, size, tweaks }) {
 // Justified rows for tablet+ widths. Photos sit shoulder-to-shoulder at a
 // shared row height; each row fills the container width exactly. Gutters
 // within a row equal gutters between rows.
-function JustifiedRows({ photos, width, targetRowHeight, gutter, album }) {
+function JustifiedRows({ photos, width, targetRowHeight, gutter, alt }) {
   const rows = buildJustifiedRows(photos, width, targetRowHeight, gutter);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: gutter }}>
@@ -75,11 +62,11 @@ function JustifiedRows({ photos, width, targetRowHeight, gutter, album }) {
                 width: p.width,
                 height: p.height,
                 flex: "0 0 auto",
-                boxShadow: "0 24px 60px -30px rgba(0,0,0,0.75)",
+                boxShadow: D2.photoShadow,
                 overflow: "hidden",
               }}
             >
-              <Placeholder src={p.src} ratio={p.ratio} alt={album.title} />
+              <Placeholder src={p.src} ratio={p.ratio} alt={alt} />
             </div>
           ))}
         </div>
@@ -89,12 +76,12 @@ function JustifiedRows({ photos, width, targetRowHeight, gutter, album }) {
 }
 
 // Mobile fallback: single column of photos at natural aspect, no justification.
-function MobileColumn({ photos, gutter, album }) {
+function PhotoColumn({ photos, gutter, alt }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: gutter }}>
       {photos.map((p, i) => (
-        <div key={i} style={{ boxShadow: "0 24px 60px -30px rgba(0,0,0,0.75)" }}>
-          <Placeholder src={p.src} ratio={p.ratio} alt={album.title} />
+        <div key={i} style={{ boxShadow: D2.photoShadow }}>
+          <Placeholder src={p.src} ratio={p.ratio} alt={alt} />
         </div>
       ))}
     </div>

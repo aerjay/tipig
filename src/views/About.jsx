@@ -3,23 +3,20 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { Rule } from "../components/Rule";
 import { useViewportSize } from "../hooks/useViewportSize";
+import { bySize, pageX } from "../lib/responsive";
 
 // About: an artist statement presented like gallery wall text (SPEC §8).
-// Centered single column. Dictionary entry → hairline rule → single statement
-// paragraph → signature. No per-section labels (the single statement is final).
+// Centered single column: dictionary entry → hairline rule → single statement
+// paragraph. No per-section labels (the single statement is final).
 export default function About() {
   const size = useViewportSize();
   const compact = size === "mobile";
-  const mid = size === "tablet";
-  const padX = compact ? 22 : mid ? 36 : 56;
-  const padTop = compact ? 40 : mid ? 64 : 96;
-  const colMax = compact ? "100%" : mid ? 580 : 640;
 
   return (
-    <div style={{ background: D2.bg, color: D2.ink, fontFamily: D2.sans, minHeight: "100%" }}>
+    <>
       <Header view="about" />
-      <main style={{ padding: `${padTop}px ${padX}px ${compact ? 48 : 80}px` }}>
-        <div style={{ maxWidth: colMax, margin: "0 auto" }}>
+      <main style={{ padding: `${bySize(size, 40, 64, 96)}px ${pageX(size)}px ${compact ? 48 : 80}px` }}>
+        <div style={{ maxWidth: bySize(size, "100%", 580, 640), margin: "0 auto" }}>
           {/* Dictionary-entry treatment for the word itself */}
           <section style={{ textAlign: "center", marginBottom: compact ? 44 : 72 }}>
             <div
@@ -35,7 +32,7 @@ export default function About() {
             </div>
             <h1
               style={{
-                font: `italic 400 ${compact ? "72px" : mid ? "108px" : "132px"}/1 ${D2.serif}`,
+                font: `italic 400 ${bySize(size, "72px", "108px", "132px")}/1 ${D2.serif}`,
                 margin: 0,
                 letterSpacing: "0.01em",
                 color: D2.ink,
@@ -107,6 +104,6 @@ export default function About() {
         </div>
       </main>
       <Footer />
-    </div>
+    </>
   );
 }

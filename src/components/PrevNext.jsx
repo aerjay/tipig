@@ -1,12 +1,10 @@
 import { D2 } from "../theme";
+import { bySize, pageX } from "../lib/responsive";
 
 // Previous / Next album row above the footer, with a hairline divider above
 // (SPEC §7.3). Wrap-around neighbours are resolved by the caller.
 export function PrevNext({ prev, next, size, onPrev, onNext }) {
   const compact = size === "mobile";
-  const mid = size === "tablet";
-  const padX = compact ? 22 : mid ? 36 : 56;
-  const padTop = compact ? 56 : mid ? 80 : 110;
 
   const eyebrow = {
     font: `400 ${compact ? "10px" : "11px"}/1 ${D2.mono}`,
@@ -15,14 +13,14 @@ export function PrevNext({ prev, next, size, onPrev, onNext }) {
     color: D2.inkSoft,
   };
   const title = {
-    font: `400 ${compact ? "20px" : mid ? "26px" : "32px"}/1 ${D2.serif}`,
+    font: `400 ${bySize(size, "20px", "26px", "32px")}/1 ${D2.serif}`,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
     color: D2.ink,
   };
 
   return (
-    <section style={{ padding: `${padTop}px ${padX}px 0` }}>
+    <section style={{ padding: `${bySize(size, 56, 80, 110)}px ${pageX(size)}px 0` }}>
       <div
         style={{
           display: "grid",

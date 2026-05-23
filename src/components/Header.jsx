@@ -1,24 +1,18 @@
 import { D2 } from "../theme";
 import { useViewportSize } from "../hooks/useViewportSize";
 import { useGalleryNav } from "../lib/nav";
+import { bySize, pageX } from "../lib/responsive";
 
 // Single header row: wordmark left, two-item nav right. No mobile menu —
 // there are only two items and they always fit (SPEC §4).
 export function Header({ view }) {
   const size = useViewportSize();
   const compact = size === "mobile";
-  const mid = size === "tablet";
   const nav = useGalleryNav();
 
-  const goHome = () => {
-    if (view !== "home") nav.goHome();
-  };
-  const goTravels = () => {
-    if (view !== "home") nav.goHome();
-  };
-  const goAbout = () => {
-    if (view !== "about") nav.goAbout();
-  };
+  // The wordmark and the "Travels" link both go home.
+  const goHome = () => view !== "home" && nav.goHome();
+  const goAbout = () => view !== "about" && nav.goAbout();
 
   return (
     <header
@@ -26,14 +20,14 @@ export function Header({ view }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: compact ? "22px 22px" : mid ? "30px 36px" : "40px 56px",
+        padding: `${bySize(size, 22, 30, 40)}px ${pageX(size)}px`,
         gap: 18,
       }}
     >
       <div
         onClick={goHome}
         style={{
-          font: `400 ${compact ? "20px" : mid ? "24px" : "26px"}/1 ${D2.serif}`,
+          font: `400 ${bySize(size, "20px", "24px", "26px")}/1 ${D2.serif}`,
           letterSpacing: "0.24em",
           textTransform: "uppercase",
           color: D2.ink,
@@ -53,7 +47,7 @@ export function Header({ view }) {
         }}
       >
         <span
-          onClick={goTravels}
+          onClick={goHome}
           style={{ cursor: "pointer", color: view === "home" ? D2.ink : D2.inkSoft }}
         >
           Travels

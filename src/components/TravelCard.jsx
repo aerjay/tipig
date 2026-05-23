@@ -2,14 +2,12 @@ import { D2 } from "../theme";
 import { Placeholder } from "./Placeholder";
 import { formatTravelDate } from "../lib/format";
 
-// One album card: uniform cover image + a quiet label row beneath.
-// Uniform cover aspect across all cards is intentional — it gives the home
-// grid a salon-hang regularity (SPEC §6, §13). Whole card is clickable.
-export function TravelCard({ album, size, tweaks, onOpen }) {
+// One album card: uniform 4:5 cover image + a quiet label row beneath. The
+// uniform cover aspect is intentional — it gives the home grid a salon-hang
+// regularity (SPEC §6, §13). Whole card is clickable.
+export function TravelCard({ album, size, onOpen }) {
   const compact = size === "mobile";
-  const coverAspect = tweaks.aspect === "uniform" ? "3/2" : "4/5";
-  const coverSrc = album.cover || (album.photos[0] && album.photos[0].src);
-  const date = formatTravelDate(album.when);
+  const coverSrc = album.cover || album.photos[0]?.src;
 
   return (
     <article
@@ -21,8 +19,8 @@ export function TravelCard({ album, size, tweaks, onOpen }) {
         gap: compact ? 12 : 16,
       }}
     >
-      <div style={{ boxShadow: "0 28px 70px -30px rgba(0,0,0,0.85)" }}>
-        <Placeholder src={coverSrc} aspect={coverAspect} alt={album.title} />
+      <div style={{ boxShadow: D2.coverShadow }}>
+        <Placeholder src={coverSrc} aspect="4/5" alt={album.title} />
       </div>
       <div
         style={{
@@ -51,7 +49,7 @@ export function TravelCard({ album, size, tweaks, onOpen }) {
             whiteSpace: "nowrap",
           }}
         >
-          {date}
+          {formatTravelDate(album.when)}
         </div>
       </div>
     </article>

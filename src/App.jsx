@@ -42,8 +42,12 @@ function offsets(axis, dir) {
     : { from: { y: "100%" }, exit: { y: "-100%" } };
 }
 
+// Each transition layer carries the page's base look, so individual views
+// don't repeat a background/color/font wrapper.
 const layerBase = {
   background: D2.bg,
+  color: D2.ink,
+  fontFamily: D2.sans,
   width: "100%",
   minHeight: "100vh",
 };
