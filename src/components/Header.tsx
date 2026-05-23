@@ -32,8 +32,8 @@ export function Header({ view }: HeaderProps) {
       <div
         onClick={goHome}
         style={{
-          font: `400 ${bySize(size, "20px", "24px", "26px")}/1 ${D2.serif}`,
-          letterSpacing: "0.24em",
+          font: `700 ${bySize(size, "20px", "24px", "26px")}/1 ${D2.serif}`,
+          letterSpacing: "-0.06em",
           textTransform: "uppercase",
           color: D2.ink,
           cursor: "pointer",
