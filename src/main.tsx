@@ -8,7 +8,7 @@ import "./index.css";
 // useLocation and renders the matching view inside its transition layers.
 // (Routing the element per-path would remount App on every navigation and
 // destroy the in-flight transition.) Unknown paths fall through to Home.
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />

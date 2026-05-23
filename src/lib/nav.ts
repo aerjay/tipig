@@ -8,15 +8,29 @@
 //     navigation via React Router's location state.
 import { useNavigate } from "react-router-dom";
 import { ALBUMS } from "../data/albums";
+import type { Album, View } from "../types";
 
-export function matchView(pathname) {
+// The direction a navigation slides, carried on the location state.
+export type Dir = "forward" | "back";
+
+// The axis a transition slides along, derived from the destination view.
+export type Axis = "horizontal" | "vertical";
+
+// Result of resolving a pathname to a view (a discriminated union: only the
+// album case carries an id).
+export type ViewMatch =
+  | { view: "home" }
+  | { view: "about" }
+  | { view: "album"; albumId: string };
+
+export function matchView(pathname: string): ViewMatch {
   if (pathname === "/about") return { view: "about" };
   const m = pathname.match(/^\/travels\/([^/]+)/);
   if (m) return { view: "album", albumId: decodeURIComponent(m[1]) };
   return { view: "home" };
 }
 
-export function axisFor(view) {
+export function axisFor(view: View): Axis {
   return view === "album" ? "horizontal" : "vertical";
 }
 
@@ -27,14 +41,20 @@ export function useGalleryNav() {
   return {
     goHome: () => navigate("/", { state: { dir: "back" } }),
     goAbout: () => navigate("/about", { state: { dir: "forward" } }),
-    openAlbum: (id) => navigate(`/travels/${id}`, { state: { dir: "forward" } }),
-    nextAlbum: (id) => navigate(`/travels/${id}`, { state: { dir: "forward" } }),
-    prevAlbum: (id) => navigate(`/travels/${id}`, { state: { dir: "back" } }),
+    openAlbum: (id: string) => navigate(`/travels/${id}`, { state: { dir: "forward" } }),
+    nextAlbum: (id: string) => navigate(`/travels/${id}`, { state: { dir: "forward" } }),
+    prevAlbum: (id: string) => navigate(`/travels/${id}`, { state: { dir: "back" } }),
   };
 }
 
+export interface AlbumWithNeighbours {
+  album: Album;
+  prev: Album;
+  next: Album;
+}
+
 // Resolve the album for an id, plus its wrap-around neighbours (SPEC §7.3).
-export function albumWithNeighbours(albumId) {
+export function albumWithNeighbours(albumId: string): AlbumWithNeighbours {
   const album = ALBUMS.find((a) => a.id === albumId) || ALBUMS[0];
   const idx = ALBUMS.findIndex((a) => a.id === album.id);
   const prev = ALBUMS[(idx - 1 + ALBUMS.length) % ALBUMS.length];

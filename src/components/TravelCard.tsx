@@ -1,11 +1,18 @@
 import { D2 } from "../theme";
 import { Placeholder } from "./Placeholder";
 import { formatTravelDate } from "../lib/format";
+import type { Album, Size } from "../types";
+
+interface TravelCardProps {
+  album: Album;
+  size: Size;
+  onOpen: () => void;
+}
 
 // One album card: uniform 4:5 cover image + a quiet label row beneath. The
 // uniform cover aspect is intentional — it gives the home grid a salon-hang
 // regularity (SPEC §6, §13). Whole card is clickable.
-export function TravelCard({ album, size, onOpen }) {
+export function TravelCard({ album, size, onOpen }: TravelCardProps) {
   const compact = size === "mobile";
   const coverSrc = album.cover || album.photos[0]?.src;
 

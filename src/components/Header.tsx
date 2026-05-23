@@ -2,10 +2,15 @@ import { D2 } from "../theme";
 import { useViewportSize } from "../hooks/useViewportSize";
 import { useGalleryNav } from "../lib/nav";
 import { bySize, pageX } from "../lib/responsive";
+import type { View } from "../types";
+
+interface HeaderProps {
+  view: View;
+}
 
 // Single header row: wordmark left, two-item nav right. No mobile menu —
 // there are only two items and they always fit (SPEC §4).
-export function Header({ view }) {
+export function Header({ view }: HeaderProps) {
   const size = useViewportSize();
   const compact = size === "mobile";
   const nav = useGalleryNav();

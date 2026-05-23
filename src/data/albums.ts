@@ -2,8 +2,10 @@
 // Source of truth: the photos + album.json in each
 // public/memories/<year>/<month>/<country>/ folder. Regenerated automatically
 // before `npm run dev` and `npm run build`; run `npm run build:albums` to
-// refresh it manually. See scripts/build-albums.js for what's derived.
-export const ALBUMS = [
+// refresh it manually. See scripts/build-albums.ts for what's derived.
+import type { Album } from "../types";
+
+export const ALBUMS: Album[] = [
   {
     id: "philippines-2026",
     title: "Philippines",

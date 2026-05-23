@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { measure, toRatio } from "./measure.js";
+import { measure, toRatio } from "./measure";
 
 // These tests build the smallest valid headers the reader cares about, in
 // memory — no fixture files. Each helper writes only the bytes measure()
@@ -8,7 +8,7 @@ import { measure, toRatio } from "./measure.js";
 
 // PNG: 8-byte signature, then an IHDR chunk whose width/height sit at byte
 // offsets 16 and 20.
-function makePng(width, height) {
+function makePng(width: number, height: number): Buffer {
   const buf = Buffer.alloc(24);
   buf[0] = 0x89;
   buf.write("PNG", 1, "ascii");
@@ -20,7 +20,7 @@ function makePng(width, height) {
 
 // An APP1 "Exif" segment carrying a single IFD0 entry: the Orientation tag
 // (0x0112). Little-endian ("II") TIFF block.
-function exifSegment(orientation) {
+function exifSegment(orientation: number): Buffer {
   const tiff = Buffer.alloc(26);
   tiff.write("II", 0, "ascii"); // byte order
   tiff.writeUInt16LE(0x2a, 2); // TIFF magic
@@ -41,7 +41,7 @@ function exifSegment(orientation) {
 }
 
 // JPEG: SOI, an optional EXIF segment, a SOF0 frame holding height/width, EOI.
-function makeJpeg(width, height, orientation) {
+function makeJpeg(width: number, height: number, orientation?: number): Buffer {
   const sof = Buffer.alloc(11);
   sof[0] = 0xff;
   sof[1] = 0xc0; // SOF0
@@ -90,8 +90,8 @@ describe("measure", () => {
     expect(measure(Buffer.from([0x00, 0x01, 0x02, 0x03]))).toBeNull();
   });
 
-  it("measures then rounds to a displayed ratio that matches albums.js", () => {
-    const dims = measure(makeJpeg(2172, 1448, 6)); // rotated → portrait
+  it("measures then rounds to a displayed ratio that matches albums.ts", () => {
+    const dims = measure(makeJpeg(2172, 1448, 6))!; // rotated → portrait
     expect(toRatio(dims.width, dims.height)).toBe(0.6667);
   });
 });

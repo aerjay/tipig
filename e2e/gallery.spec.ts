@@ -22,11 +22,11 @@ test.describe("Tipig gallery", () => {
       const firstRow = [...document.querySelectorAll("div")].find((d) => {
         const s = getComputedStyle(d);
         return s.display === "flex" && s.flexDirection === "row" && d.querySelector(".ph");
-      });
+      })!;
       const gap = parseFloat(getComputedStyle(firstRow).gap) || 0;
       const widths = [...firstRow.children].map((c) => c.getBoundingClientRect().width);
       const span = widths.reduce((a, b) => a + b, 0) + gap * (widths.length - 1);
-      return { rowSpan: span, containerWidth: firstRow.parentElement.clientWidth };
+      return { rowSpan: span, containerWidth: firstRow.parentElement!.clientWidth };
     });
 
     expect(Math.abs(rowSpan - containerWidth)).toBeLessThan(2);

@@ -31,7 +31,7 @@ describe("axisFor", () => {
 describe("albumWithNeighbours", () => {
   it("wraps around at both ends of the album list", () => {
     const first = ALBUMS[0];
-    const last = ALBUMS.at(-1);
+    const last = ALBUMS.at(-1)!;
     expect(albumWithNeighbours(first.id).prev.id).toBe(last.id);
     expect(albumWithNeighbours(last.id).next.id).toBe(first.id);
   });

@@ -1,9 +1,15 @@
 import { D2 } from "../theme";
 import { bySize, pageX } from "../lib/responsive";
+import type { Album, Size } from "../types";
+
+interface AlbumTitleProps {
+  album: Album;
+  size: Size;
+}
 
 // The compact 3-tier title block: Country / Cities / Date (SPEC §7.1).
 // Centered and deliberately small — the photos are the focus, not the title.
-export function AlbumTitle({ album, size }) {
+export function AlbumTitle({ album, size }: AlbumTitleProps) {
   const compact = size === "mobile";
   return (
     <section

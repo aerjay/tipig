@@ -3,18 +3,24 @@ import { D2 } from "../theme";
 import { Placeholder } from "./Placeholder";
 import { buildJustifiedRows } from "../lib/justified";
 import { bySize, pageX } from "../lib/responsive";
+import type { Album, Photo, Size } from "../types";
+
+interface AlbumColumnProps {
+  album: Album;
+  size: Size;
+}
 
 // The core album layout (SPEC §7.2). On tablet+ it runs the justified-strips
 // algorithm against the live container width (measured via ResizeObserver, so
 // the layout recomputes on viewport resize). On mobile it falls back to a
 // plain single column at natural aspect.
-export function AlbumColumn({ album, size }) {
+export function AlbumColumn({ album, size }: AlbumColumnProps) {
   const compact = size === "mobile";
   const colWidth = bySize(size, "100%", "100%", "min(1500px, 92%)");
   const targetRowHeight = bySize(size, 360, 340, 460);
   const gutter = bySize(size, 26, 38, 64);
 
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [measuredWidth, setMeasuredWidth] = useState(0);
   useEffect(() => {
     const node = containerRef.current;
@@ -46,10 +52,18 @@ export function AlbumColumn({ album, size }) {
   );
 }
 
+interface JustifiedRowsProps {
+  photos: Photo[];
+  width: number;
+  targetRowHeight: number;
+  gutter: number;
+  alt: string;
+}
+
 // Justified rows for tablet+ widths. Photos sit shoulder-to-shoulder at a
 // shared row height; each row fills the container width exactly. Gutters
 // within a row equal gutters between rows.
-function JustifiedRows({ photos, width, targetRowHeight, gutter, alt }) {
+function JustifiedRows({ photos, width, targetRowHeight, gutter, alt }: JustifiedRowsProps) {
   const rows = buildJustifiedRows(photos, width, targetRowHeight, gutter);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: gutter }}>
@@ -75,8 +89,14 @@ function JustifiedRows({ photos, width, targetRowHeight, gutter, alt }) {
   );
 }
 
+interface PhotoColumnProps {
+  photos: Photo[];
+  gutter: number;
+  alt: string;
+}
+
 // Mobile fallback: single column of photos at natural aspect, no justification.
-function PhotoColumn({ photos, gutter, alt }) {
+function PhotoColumn({ photos, gutter, alt }: PhotoColumnProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: gutter }}>
       {photos.map((p, i) => (

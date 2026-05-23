@@ -1,5 +1,4 @@
-/// <reference types="vitest/config" />
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
@@ -9,6 +8,6 @@ export default defineConfig({
   // Playwright end-to-end specs live in e2e/ and are run separately
   // (npm run test:e2e).
   test: {
-    include: ["src/**/*.test.js", "scripts/**/*.test.js"],
+    include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
   },
 });

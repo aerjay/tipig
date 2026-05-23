@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+
+interface PlaceholderProps {
+  src?: string;
+  ratio?: number;
+  aspect?: string;
+  alt?: string;
+}
 
 // Renders a real <img> at a given aspect ratio and fades it up the first time
 // it scrolls into view (IntersectionObserver, rootMargin 120px). SPEC §10.
@@ -9,8 +16,8 @@ import { useEffect, useRef, useState } from "react";
 //
 // `prefers-reduced-motion` is honoured purely in CSS (.ph override), which
 // pins opacity/transform and removes the transition.
-export function Placeholder({ src, ratio, aspect, alt = "" }) {
-  let ar;
+export function Placeholder({ src, ratio, aspect, alt = "" }: PlaceholderProps) {
+  let ar: string;
   if (typeof ratio === "number" && isFinite(ratio) && ratio > 0) {
     ar = `${ratio}`;
   } else if (aspect) {
@@ -19,7 +26,7 @@ export function Placeholder({ src, ratio, aspect, alt = "" }) {
     ar = "3 / 4";
   }
 
-  const wrapRef = useRef(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -42,7 +49,7 @@ export function Placeholder({ src, ratio, aspect, alt = "" }) {
     return () => io.disconnect();
   }, [visible]);
 
-  const fadeStyle = {
+  const fadeStyle: CSSProperties = {
     opacity: visible ? 1 : 0,
     transform: visible ? "none" : "translateY(8px)",
     transition:

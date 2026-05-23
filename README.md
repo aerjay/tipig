@@ -17,23 +17,24 @@ When accessing this web app, I want to evoke the same feelings you get when walk
 Keep it as simple as possible.
 
 Built from the design handoff in `TIPIG 1.2.zip` (see its
-`SPEC.md`) as a Vite + React single-page app with React Router.
+`SPEC.md`) as a Vite + React + TypeScript single-page app with React Router.
 
 ## Running it
 
 ```bash
-npm install       # one-time
-npm run dev       # dev server at http://localhost:5173
-npm run build     # production build into dist/
-npm run preview   # serve the production build locally
-npm test          # unit tests (Vitest) — pure logic
-npm run test:e2e  # end-to-end tests (Playwright) — auto-starts the dev server
+npm install        # one-time
+npm run dev        # dev server at http://localhost:5173
+npm run build      # type-check, then production build into dist/
+npm run preview    # serve the production build locally
+npm run typecheck  # type-check only (tsc --noEmit)
+npm test           # unit tests (Vitest) — pure logic
+npm run test:e2e   # end-to-end tests (Playwright) — auto-starts the dev server
 ```
 
 ### Tests
 
 - **Unit (`npm test`)** — fast, in-Node tests of the pure logic, co-located as
-  `src/lib/*.test.js`: the justified-rows algorithm (tested against its
+  `src/lib/*.test.ts`: the justified-rows algorithm (tested against its
   invariants, not hard-coded pixels), date formatting, and routing helpers.
 - **End-to-end (`npm run test:e2e`)** — a thin Playwright net in `e2e/` covering
   what unit tests can't: real routing + deep links, the justified layout as
@@ -45,16 +46,17 @@ npm run test:e2e  # end-to-end tests (Playwright) — auto-starts the dev server
 
 - `src/views/` — the three views: `Home` (Travels grid), `Album`
   (justified-strips gallery), `About` (artist statement).
-- `src/App.jsx` — the page-transition controller (two-layer slide pair).
-- `src/lib/justified.js` — the row-packing algorithm for the album view.
+- `src/App.tsx` — the page-transition controller (two-layer slide pair).
+- `src/types.ts` — the shared domain types (`Album`, `Photo`, `Size`, `View`).
+- `src/lib/justified.ts` — the row-packing algorithm for the album view.
 - `public/memories/<year>/<month>/<country>/` — one folder per album and the
   source of truth: the photos (`01.jpeg…`, numbered in display order) plus an
   `album.json`. One country = one album; list its cities/towns in `places`.
-- `src/data/albums.js` — **auto-generated; do not edit by hand.** Built from the
+- `src/data/albums.ts` — **auto-generated; do not edit by hand.** Built from the
   folders above by `npm run build:albums` (which also runs automatically before
   `npm run dev` and `npm run build`).
-- `scripts/build-albums.js` — the generator. `scripts/measure.js` reads image
-  aspect ratios (`npm run measure` to spot-check a folder).
+- `scripts/build-albums.ts` — the generator. `scripts/measure.ts` reads image
+  aspect ratios (`npm run measure` to spot-check a folder). Both run via `tsx`.
 
 ### Adding an album
 

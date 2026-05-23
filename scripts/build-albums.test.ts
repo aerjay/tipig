@@ -3,11 +3,13 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { build, serialize, titleCase } from "./build-albums.js";
+import { transform } from "esbuild";
+import { build, serialize, titleCase } from "./build-albums";
+import type { Album } from "../src/types";
 
 // A minimal JPEG: SOI + a SOF0 frame carrying the given pixel dimensions + EOI.
 // Enough for measure() to read width/height (and thus the derived ratio).
-function jpeg(width, height) {
+function jpeg(width: number, height: number): Buffer {
   const sof = Buffer.alloc(11);
   sof[0] = 0xff;
   sof[1] = 0xc0;
@@ -18,7 +20,7 @@ function jpeg(width, height) {
   return Buffer.concat([Buffer.from([0xff, 0xd8]), sof, Buffer.from([0xff, 0xd9])]);
 }
 
-let root;
+let root: string;
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "tipig-albums-"));
 });
@@ -28,7 +30,11 @@ afterEach(() => {
 
 // Lay down an album folder under root: numbered JPEGs + an album.json.
 // `photos` is an array of [width, height]; pass meta:null to skip album.json.
-function makeAlbum(rel, photos, meta = { places: "Somewhere" }) {
+function makeAlbum(
+  rel: string,
+  photos: Array<[number, number]>,
+  meta: Record<string, unknown> | null = { places: "Somewhere" }
+): string {
   const dir = join(root, rel);
   mkdirSync(dir, { recursive: true });
   photos.forEach(([w, h], i) => {
@@ -120,7 +126,7 @@ describe("build", () => {
 
 describe("serialize", () => {
   it("emits an AUTO-GENERATED module that round-trips to the same data", async () => {
-    const album = {
+    const album: Album = {
       id: "japan-2027",
       title: "Japan",
       when: "March 2027",
@@ -130,12 +136,14 @@ describe("serialize", () => {
     };
     const code = serialize([album]);
     expect(code).toContain("AUTO-GENERATED");
-    expect(code).toMatch(/export const ALBUMS = \[/);
+    expect(code).toMatch(/export const ALBUMS/);
 
-    // Write it out and import it back: the generated file must be valid JS
-    // whose ALBUMS equals what we put in.
+    // The emitted module is TypeScript (typed import + annotation). Compile it
+    // to JS the way the toolchain does, then import it back: the generated
+    // ALBUMS must equal what we put in.
+    const { code: js } = await transform(code, { loader: "ts" });
     const file = join(root, "albums.mjs");
-    writeFileSync(file, code);
+    writeFileSync(file, js);
     const mod = await import(pathToFileURL(file).href);
     expect(mod.ALBUMS).toEqual([album]);
   });

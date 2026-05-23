@@ -7,6 +7,11 @@ import { PrevNext } from "../components/PrevNext";
 import { useViewportSize } from "../hooks/useViewportSize";
 import { useGalleryNav, albumWithNeighbours } from "../lib/nav";
 
+interface AlbumProps {
+  albumId: string;
+  active?: boolean;
+}
+
 // Album view: title block, justified-strips gallery, prev/next row (SPEC §7).
 // Keyboard nav: ← previous album, → next album, Esc back to home (SPEC §10).
 //
@@ -14,14 +19,14 @@ import { useGalleryNav, albumWithNeighbours } from "../lib/nav";
 // transition (both views are mounted during the 600ms slide). Only the active
 // album binds the keyboard listener, so a keypress mid-transition can't be
 // handled by two albums at once.
-export default function Album({ albumId, active = true }) {
+export default function Album({ albumId, active = true }: AlbumProps) {
   const size = useViewportSize();
   const nav = useGalleryNav();
   const { album, prev, next } = albumWithNeighbours(albumId);
 
   useEffect(() => {
     if (!active) return;
-    function handler(e) {
+    function handler(e: KeyboardEvent) {
       if (isTypingTarget(e.target)) return;
       if (e.key === "Escape") {
         e.preventDefault();
@@ -57,6 +62,7 @@ export default function Album({ albumId, active = true }) {
 }
 
 // Don't hijack arrow/Escape keys while the user is typing into a field.
-function isTypingTarget(el) {
-  return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+function isTypingTarget(el: EventTarget | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable;
 }

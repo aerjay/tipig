@@ -3,7 +3,7 @@ import { buildJustifiedRows } from "./justified";
 
 // The horizontal space a row actually occupies: its photo widths plus the
 // gutters between them. A "full" row equals the container width.
-const rowSpan = (row, gutter) =>
+const rowSpan = (row: { photos: { width: number }[] }, gutter: number): number =>
   row.photos.reduce((sum, p) => sum + p.width, 0) + gutter * (row.photos.length - 1);
 
 describe("buildJustifiedRows", () => {
@@ -57,7 +57,7 @@ describe("buildJustifiedRows", () => {
 
   it("never stretches the last row past the container or the target height", () => {
     const rows = buildJustifiedRows(photos, WIDTH, TARGET, GUTTER);
-    const last = rows.at(-1);
+    const last = rows.at(-1)!;
     expect(rowSpan(last, GUTTER)).toBeLessThanOrEqual(WIDTH + 0.01);
     expect(last.height).toBeLessThanOrEqual(TARGET + 0.01);
   });
@@ -71,7 +71,8 @@ describe("buildJustifiedRows", () => {
   });
 
   it("treats a photo with no measured ratio as square", () => {
-    const [row] = buildJustifiedRows([{ src: "x" }], WIDTH, TARGET, GUTTER);
+    const input = [{ src: "x" }]; // a variable, so its inferred element type carries `src`
+    const [row] = buildJustifiedRows(input, WIDTH, TARGET, GUTTER);
     expect(row.photos[0].width).toBeCloseTo(row.photos[0].height);
   });
 });

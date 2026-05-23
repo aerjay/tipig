@@ -16,7 +16,7 @@ export default function About() {
     <>
       <Header view="about" />
       <main style={{ padding: `${bySize(size, 40, 64, 96)}px ${pageX(size)}px ${compact ? 48 : 80}px` }}>
-        <div style={{ maxWidth: bySize(size, "100%", 580, 640), margin: "0 auto" }}>
+        <div style={{ maxWidth: bySize<string | number>(size, "100%", 580, 640), margin: "0 auto" }}>
           {/* Dictionary-entry treatment for the word itself */}
           <section style={{ textAlign: "center", marginBottom: compact ? 44 : 72 }}>
             <div

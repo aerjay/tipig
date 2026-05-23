@@ -1,6 +1,6 @@
 // Convert a long-form month ("April 2026") to "MM/YYYY" ("04/2026").
 // Used for the date on home album cards (SPEC §6).
-const MONTHS = {
+const MONTHS: Record<string, string> = {
   january: "01",
   february: "02",
   march: "03",
@@ -15,7 +15,7 @@ const MONTHS = {
   december: "12",
 };
 
-export function formatTravelDate(s) {
+export function formatTravelDate(s: string | null | undefined): string {
   if (!s) return "";
   const parts = s.trim().split(/\s+/);
   if (parts.length === 2 && MONTHS[parts[0].toLowerCase()]) {

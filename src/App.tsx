@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
+import { useLocation, type Location } from "react-router-dom";
 import { motion } from "framer-motion";
 import { D2 } from "./theme";
-import { matchView, axisFor } from "./lib/nav";
+import { matchView, axisFor, type Axis, type Dir } from "./lib/nav";
 import Home from "./views/Home";
 import Album from "./views/Album";
 import About from "./views/About";
@@ -23,7 +23,7 @@ const DURATION = 0.6; // seconds
 
 // `active` is true for the settled/incoming layer and false for the outgoing
 // layer during a transition. Only the active Album wires up keyboard nav.
-function renderView(location, active) {
+function renderView(location: Location, active: boolean): ReactElement {
   const m = matchView(location.pathname);
   if (m.view === "about") return <About />;
   if (m.view === "album") return <Album key={m.albumId} albumId={m.albumId} active={active} />;
@@ -31,7 +31,7 @@ function renderView(location, active) {
 }
 
 // Start ("from") and end ("exit") offsets for the entering/leaving layers.
-function offsets(axis, dir) {
+function offsets(axis: Axis, dir: Dir) {
   if (axis === "horizontal") {
     return dir === "back"
       ? { from: { x: "-100%" }, exit: { x: "100%" } }
@@ -44,7 +44,7 @@ function offsets(axis, dir) {
 
 // Each transition layer carries the page's base look, so individual views
 // don't repeat a background/color/font wrapper.
-const layerBase = {
+const layerBase: CSSProperties = {
   background: D2.bg,
   color: D2.ink,
   fontFamily: D2.sans,
@@ -53,29 +53,36 @@ const layerBase = {
 };
 // During a transition each layer is its own fixed, clipped viewport so the
 // off-screen page never grows the document or shows a scrollbar.
-const transLayer = {
+const transLayer: CSSProperties = {
   position: "fixed",
   inset: 0,
   overflowX: "hidden",
   overflowY: "auto",
 };
 
+interface Stack {
+  current: Location;
+  leaving: Location | null;
+  axis: Axis;
+  dir: Dir;
+}
+
 export default function App() {
   const location = useLocation();
   const reduced = usePrefersReducedMotion();
-  const [stack, setStack] = useState(() => ({
+  const [stack, setStack] = useState<Stack>(() => ({
     current: location,
     leaving: null,
     axis: "vertical",
     dir: "forward",
   }));
-  const timer = useRef(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (location.key === stack.current.key) return;
     const dest = matchView(location.pathname);
     const axis = axisFor(dest.view);
-    const dir = location.state?.dir || "forward";
+    const dir: Dir = (location.state as { dir?: Dir } | null)?.dir || "forward";
     window.scrollTo(0, 0);
 
     if (reduced) {
@@ -116,7 +123,7 @@ export default function App() {
         transition={{ duration: DURATION, ease: EASE }}
         style={{
           ...layerBase,
-          ...(transitioning ? { ...transLayer, zIndex: 2 } : { position: "relative" }),
+          ...(transitioning ? { ...transLayer, zIndex: 2 } : { position: "relative" as const }),
         }}
       >
         {renderView(current, true)}

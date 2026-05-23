@@ -1,4 +1,4 @@
-// Generate src/data/albums.js from the photo folders + per-album album.json.
+// Generate src/data/albums.ts from the photo folders + per-album album.json.
 //
 // Source of truth is the filesystem: each album is a folder
 //   public/memories/<year>/<month>/<country>/
@@ -17,24 +17,38 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { measure, toRatio } from "./measure.js";
+import { measure, toRatio } from "./measure";
+import type { Album } from "../src/types";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const memoriesDir = join(root, "public", "memories");
-const outFile = join(root, "src", "data", "albums.js");
+const outFile = join(root, "src", "data", "albums.ts");
 
 const MONTHS = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"];
 
-const isImage = (f) => /\.(jpe?g|png)$/i.test(f);
-const subdirs = (d) =>
+const isImage = (f: string): boolean => /\.(jpe?g|png)$/i.test(f);
+const subdirs = (d: string): string[] =>
   readdirSync(d, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
-export const titleCase = (slug) =>
+export const titleCase = (slug: string): string =>
   slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
+// The hand-authored album.json. Only `places` is required; the rest is derived.
+interface AlbumMeta {
+  places?: string;
+  cover?: string;
+  title?: string;
+}
+
+// An album plus the scratch fields used only for ordering the output.
+interface BuiltAlbum extends Album {
+  sortKey: string;
+  country: string;
+}
+
 // Walk <baseDir>/<year>/<MM>/<country>/ and build one album per folder.
-export function build(baseDir = memoriesDir) {
-  const albums = [];
+export function build(baseDir: string = memoriesDir): BuiltAlbum[] {
+  const albums: BuiltAlbum[] = [];
   for (const year of subdirs(baseDir).filter((y) => /^\d{4}$/.test(y))) {
     for (const mm of subdirs(join(baseDir, year)).filter((m) => /^(0[1-9]|1[0-2])$/.test(m))) {
       for (const country of subdirs(join(baseDir, year, mm))) {
@@ -45,11 +59,11 @@ export function build(baseDir = memoriesDir) {
 
         const metaPath = join(dir, "album.json");
         if (!existsSync(metaPath)) throw new Error(`${rel}: missing album.json`);
-        let meta;
+        let meta: AlbumMeta;
         try {
-          meta = JSON.parse(readFileSync(metaPath, "utf8"));
+          meta = JSON.parse(readFileSync(metaPath, "utf8")) as AlbumMeta;
         } catch (e) {
-          throw new Error(`${rel}/album.json: invalid JSON — ${e.message}`);
+          throw new Error(`${rel}/album.json: invalid JSON — ${(e as Error).message}`);
         }
         if (typeof meta.places !== "string" || !meta.places.trim())
           throw new Error(`${rel}/album.json: "places" is required`);
@@ -83,9 +97,9 @@ export function build(baseDir = memoriesDir) {
   return albums;
 }
 
-export function serialize(albums) {
+export function serialize(albums: Album[]): string {
   const q = JSON.stringify;
-  const block = (a) =>
+  const block = (a: Album): string =>
     [
       "  {",
       `    id: ${q(a.id)},`,
@@ -103,17 +117,19 @@ export function serialize(albums) {
 // Source of truth: the photos + album.json in each
 // public/memories/<year>/<month>/<country>/ folder. Regenerated automatically
 // before \`npm run dev\` and \`npm run build\`; run \`npm run build:albums\` to
-// refresh it manually. See scripts/build-albums.js for what's derived.
-export const ALBUMS = [
+// refresh it manually. See scripts/build-albums.ts for what's derived.
+import type { Album } from "../types";
+
+export const ALBUMS: Album[] = [
 ${albums.map(block).join("\n")}
 ];
 `;
 }
 
-// Run as a CLI (node scripts/build-albums.js); skipped when imported by the test.
+// Run as a CLI (tsx scripts/build-albums.ts); skipped when imported by the test.
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const albums = build();
   writeFileSync(outFile, serialize(albums));
-  console.log(`Generated src/data/albums.js — ${albums.length} albums:`);
+  console.log(`Generated src/data/albums.ts — ${albums.length} albums:`);
   for (const a of albums) console.log(`  ${a.when.padEnd(15)} ${a.id} (${a.photos.length} photos)`);
 }

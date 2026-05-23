@@ -1,4 +1,4 @@
-// Measure photo aspect ratios for src/data/albums.js.
+// Measure photo aspect ratios for src/data/albums.ts.
 //
 // The justified-strips layout needs each photo's `ratio` (native width ÷
 // height, as the browser DISPLAYS it). This script walks public/memories/
@@ -8,7 +8,7 @@
 //
 // Usage:
 //   npm run measure          # every photo under public/memories
-//   npm run measure -- --new # only photos not already in albums.js
+//   npm run measure -- --new # only photos not already in albums.ts
 //
 // Ratio matches what the browser shows: an <img> auto-rotates by EXIF
 // orientation, so for orientation 5–8 (90° turns) we swap width/height to get
@@ -19,15 +19,20 @@ import { dirname, join, relative, sep } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const memoriesDir = join(root, "public", "memories");
-const albumsFile = join(root, "src", "data", "albums.js");
+const albumsFile = join(root, "src", "data", "albums.ts");
+
+export interface Dims {
+  width: number;
+  height: number;
+}
 
 // --- JPEG ------------------------------------------------------------------
 // Walk the marker segments. SOF markers carry the frame's height/width;
 // an APP1 "Exif" segment carries the orientation we need to honour.
-function readJpeg(buf) {
+function readJpeg(buf: Buffer): Dims | null {
   let off = 2; // skip SOI (FFD8)
   let orientation = 1;
-  let dims = null;
+  let dims: Dims | null = null;
   while (off < buf.length - 1) {
     if (buf[off] !== 0xff) {
       off++;
@@ -61,11 +66,11 @@ function readJpeg(buf) {
 }
 
 // Minimal TIFF/EXIF reader: find tag 0x0112 (Orientation) in IFD0.
-function readExifOrientation(buf, tiffStart, tiffLen) {
+function readExifOrientation(buf: Buffer, tiffStart: number, tiffLen: number): number | null {
   if (tiffStart + 8 > buf.length) return null;
   const le = buf.toString("ascii", tiffStart, tiffStart + 2) === "II";
-  const u16 = (o) => (le ? buf.readUInt16LE(o) : buf.readUInt16BE(o));
-  const u32 = (o) => (le ? buf.readUInt32LE(o) : buf.readUInt32BE(o));
+  const u16 = (o: number) => (le ? buf.readUInt16LE(o) : buf.readUInt16BE(o));
+  const u32 = (o: number) => (le ? buf.readUInt32LE(o) : buf.readUInt32BE(o));
   const ifd0 = tiffStart + u32(tiffStart + 4);
   if (ifd0 + 2 > buf.length) return null;
   const count = u16(ifd0);
@@ -79,24 +84,24 @@ function readExifOrientation(buf, tiffStart, tiffLen) {
 
 // --- PNG -------------------------------------------------------------------
 // Dimensions live in the IHDR chunk, the first chunk after the 8-byte sig.
-function readPng(buf) {
+function readPng(buf: Buffer): Dims | null {
   if (buf.length < 24) return null;
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
-export function measure(buf) {
+export function measure(buf: Buffer): Dims | null {
   if (buf[0] === 0xff && buf[1] === 0xd8) return readJpeg(buf);
   if (buf[0] === 0x89 && buf.toString("ascii", 1, 4) === "PNG") return readPng(buf);
   return null;
 }
 
 // Round to 4 decimals and drop trailing zeros (1.5, not 1.5000).
-export const toRatio = (w, h) => parseFloat((w / h).toFixed(4));
+export const toRatio = (w: number, h: number): number => parseFloat((w / h).toFixed(4));
 
 // Every image under dir, as paths relative to it, using "/" separators so they
 // match the URL form regardless of platform.
-function walk(dir, base = dir) {
-  const found = [];
+function walk(dir: string, base: string = dir): string[] {
+  const found: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) found.push(...walk(full, base));
@@ -106,9 +111,9 @@ function walk(dir, base = dir) {
 }
 
 // --- run -------------------------------------------------------------------
-function main() {
+function main(): void {
   const onlyNew = process.argv.includes("--new");
-  const referenced = onlyNew
+  const referenced: Set<string> | null = onlyNew
     ? new Set(
         [...readFileSync(albumsFile, "utf8").matchAll(/\/memories\/[^"']+/g)].map((m) => m[0])
       )
@@ -118,8 +123,8 @@ function main() {
 
   // Group lines under their folder (one folder == one album), so the output
   // drops straight into a new album's `photos: [...]`.
-  const groups = new Map();
-  const failed = [];
+  const groups = new Map<string, string[]>();
+  const failed: string[] = [];
   let skipped = 0;
   for (const rel of rels) {
     const src = `/memories/${rel}`;
@@ -133,8 +138,12 @@ function main() {
       continue;
     }
     const folder = rel.slice(0, rel.lastIndexOf("/"));
-    if (!groups.has(folder)) groups.set(folder, []);
-    groups.get(folder).push(`      { src: "${src}", ratio: ${toRatio(dims.width, dims.height)} },`);
+    let group = groups.get(folder);
+    if (!group) {
+      group = [];
+      groups.set(folder, group);
+    }
+    group.push(`      { src: "${src}", ratio: ${toRatio(dims.width, dims.height)} },`);
   }
 
   const blocks = [...groups]
@@ -143,16 +152,16 @@ function main() {
   if (blocks) {
     console.log(blocks);
   } else if (onlyNew) {
-    console.log("// No new photos — every file under public/memories is already in albums.js.");
+    console.log("// No new photos — every file under public/memories is already in albums.ts.");
   }
 
-  const notes = [];
+  const notes: string[] = [];
   if (onlyNew && skipped) notes.push(`${skipped} already referenced`);
   if (failed.length) notes.push(`${failed.length} unreadable: ${failed.join(", ")}`);
   if (notes.length) console.error(`\n// ${notes.join(" · ")}`);
   if (failed.length) process.exitCode = 1;
 }
 
-// Run the CLI only when invoked directly (node scripts/measure.js), not when
+// Run the CLI only when invoked directly (tsx scripts/measure.ts), not when
 // imported by the test — the test exercises measure()/toRatio() in isolation.
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();
