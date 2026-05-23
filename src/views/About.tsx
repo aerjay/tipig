@@ -93,12 +93,12 @@ export default function About() {
                 textWrap: "pretty",
               }}
             >
-              Whenever I close my eyes, I see only black, and memories slip away from me easily. I
-              use my camera to hold onto them. The photos here catch imperfect, emotional moments,
-              happy and messy alike, so I can remember them. Each one is a reminder, something that
-              makes me feel again. It is how I <em style={{ fontStyle: "italic" }}>tipigan</em> what
-              matters to me, a gallery of my imperfect and (more often than not) romanticized
-              memories.
+              When I close my eyes, I see only black, and memories slip away easily.
+              My camera is how I hold onto them. The photos here catch imperfect, emotional moments,
+              the happy and the messy, the kind worth remembering. Each one pulls something back,
+              makes me feel again, a gallery of my imperfect and (more often than not)
+              romanticized memories — everything that matters to me.
+              This is how I <em style={{ fontStyle: "italic" }}>tipigan</em>.
             </p>
           </section>
         </div>
