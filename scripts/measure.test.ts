@@ -40,8 +40,9 @@ function exifSegment(orientation: number): Buffer {
   return seg;
 }
 
-// JPEG: SOI, an optional EXIF segment, a SOF0 frame holding height/width, EOI.
-function makeJpeg(width: number, height: number, orientation?: number): Buffer {
+// A bare SOF0 frame carrying the given pixel dimensions — the segment measure()
+// reads width/height from.
+function sofFrame(width: number, height: number): Buffer {
   const sof = Buffer.alloc(11);
   sof[0] = 0xff;
   sof[1] = 0xc0; // SOF0
@@ -49,11 +50,15 @@ function makeJpeg(width: number, height: number, orientation?: number): Buffer {
   sof[4] = 8; // sample precision
   sof.writeUInt16BE(height, 5);
   sof.writeUInt16BE(width, 7);
+  return sof;
+}
 
+// JPEG: SOI, an optional EXIF segment, a SOF0 frame holding height/width, EOI.
+function makeJpeg(width: number, height: number, orientation?: number): Buffer {
   return Buffer.concat([
     Buffer.from([0xff, 0xd8]), // SOI
     orientation ? exifSegment(orientation) : Buffer.alloc(0),
-    sof,
+    sofFrame(width, height),
     Buffer.from([0xff, 0xd9]), // EOI
   ]);
 }
@@ -88,6 +93,28 @@ describe("measure", () => {
   it("returns null for an unrecognised format", () => {
     expect(measure(Buffer.from("not an image at all"))).toBeNull();
     expect(measure(Buffer.from([0x00, 0x01, 0x02, 0x03]))).toBeNull();
+  });
+
+  it("stops at the first SOF and never lets later bytes clobber the dimensions", () => {
+    // Regression: with no EXIF (orientation defaults to 1) the reader used to
+    // scan on past the real SOF into the entropy-coded data, where a stray 0xff
+    // could be misread as another SOF and overwrite the true dimensions. A
+    // second SOF-shaped frame lurking after the first must be ignored.
+    const buf = Buffer.concat([
+      Buffer.from([0xff, 0xd8]), // SOI
+      sofFrame(800, 600), // the real frame
+      sofFrame(1, 1), // a bogus "SOF" further down the stream
+      Buffer.from([0xff, 0xd9]), // EOI
+    ]);
+    expect(measure(buf)).toEqual({ width: 800, height: 600 });
+  });
+
+  it("returns null instead of throwing when the SOF is truncated before its dimensions", () => {
+    // SOI + an SOF0 marker and a declared length, but the buffer ends inside the
+    // frame header — reading width/height would run off the end of the buffer.
+    const truncated = Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x09, 0x08]);
+    expect(() => measure(truncated)).not.toThrow();
+    expect(measure(truncated)).toBeNull();
   });
 
   it("measures then rounds to a displayed ratio that matches albums.ts", () => {

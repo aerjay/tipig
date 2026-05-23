@@ -51,11 +51,16 @@ function readJpeg(buf: Buffer): Dims | null {
     // SOF0–SOF15 hold the dimensions, except DHT(C4)/JPG(C8)/DAC(CC).
     const isSOF = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
     if (isSOF) {
+      if (payload + 5 > buf.length) break; // SOF truncated — treat as unreadable
       dims = { height: buf.readUInt16BE(payload + 1), width: buf.readUInt16BE(payload + 3) };
     } else if (marker === 0xe1 && buf.toString("ascii", payload, payload + 4) === "Exif") {
       orientation = readExifOrientation(buf, payload + 6, len - 8) ?? 1;
     }
-    if (dims && orientation !== 1) break; // have everything we need
+    // SOF always follows the APP1/EXIF segment in a valid JPEG, so once we have
+    // dims the orientation is already settled. Stop here rather than scanning on
+    // into entropy-coded data, where a stray 0xff can be misread as another SOF
+    // and clobber the real dimensions.
+    if (dims) break;
     off = payload + (len - 2);
   }
   if (!dims) return null;
