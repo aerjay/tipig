@@ -5,11 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "npm run build:albums",
     "build": "vite build",
+    "prebuild": "npm run build:albums",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "measure": "node scripts/measure.js",
+    "build:albums": "node scripts/build-albums.js"
   },
   "dependencies": {
     "framer-motion": "^11.11.0",

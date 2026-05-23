@@ -47,9 +47,32 @@ npm run test:e2e  # end-to-end tests (Playwright) — auto-starts the dev server
   (justified-strips gallery), `About` (artist statement).
 - `src/App.jsx` — the page-transition controller (two-layer slide pair).
 - `src/lib/justified.js` — the row-packing algorithm for the album view.
-- `src/data/albums.js` — album + photo data with measured aspect ratios.
-  Re-measure the `ratio` (width/height) if you swap a source photo.
-- `public/uploads/` — the 40 source photos.
+- `public/memories/<year>/<month>/<country>/` — one folder per album and the
+  source of truth: the photos (`01.jpeg…`, numbered in display order) plus an
+  `album.json`. One country = one album; list its cities/towns in `places`.
+- `src/data/albums.js` — **auto-generated; do not edit by hand.** Built from the
+  folders above by `npm run build:albums` (which also runs automatically before
+  `npm run dev` and `npm run build`).
+- `scripts/build-albums.js` — the generator. `scripts/measure.js` reads image
+  aspect ratios (`npm run measure` to spot-check a folder).
+
+### Adding an album
+
+1. Make the folder `public/memories/<year>/<month>/<country>/` — month is two
+   digits, e.g. `public/memories/2027/03/japan/`.
+2. Drop the photos in, named `01.jpeg`, `02.jpeg`, … **in the order you want them
+   shown**. `01` is the cover by default.
+3. Add an `album.json` in that folder with the cities/towns:
+   ```json
+   { "places": "Tokyo · Kyoto" }
+   ```
+   Optional keys: `"title"` (override the auto Title-case, e.g. `"USA"`) and
+   `"cover"` (a different photo filename, e.g. `"03.jpeg"`).
+4. Run `npm run build:albums` (or just `npm run dev`, which regenerates first).
+
+Everything else is derived from the folder: `id` (`japan-2027`), `title`
+(`Japan`), date (`March 2027`), each photo's aspect ratio, and the album's
+reverse-chronological position in the grid.
 
 ### Routes
 

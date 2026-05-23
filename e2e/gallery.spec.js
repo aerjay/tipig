@@ -4,7 +4,7 @@ test.describe("Tipig gallery", () => {
   test("opens an album from the Travels grid", async ({ page }) => {
     await page.goto("/");
     const cards = page.locator("article");
-    await expect(cards).toHaveCount(6);
+    await expect(cards).toHaveCount(5);
 
     await cards.first().click();
 
@@ -44,7 +44,7 @@ test.describe("Tipig gallery", () => {
 
     await page.keyboard.press("Escape"); // back to the grid
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.locator("article")).toHaveCount(6);
+    await expect(page.locator("article")).toHaveCount(5);
   });
 
   test("handles a keypress during a transition only once", async ({ page }) => {
