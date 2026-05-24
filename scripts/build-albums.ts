@@ -7,6 +7,7 @@
 // album.json supplies the only hand-authored field, `places`, plus optional
 // `title` / `cover` overrides. Everything else is derived:
 //   id     ← <country>-<year>            (e.g. italy-2020)
+//            …-<month> appended when a country has 2+ albums in one year
 //   title  ← Title-cased <country>       (override for casing, e.g. "USA")
 //   when   ← <month> + <year>            (e.g. February 2020)
 //   cover  ← first photo                 (override with a filename)
@@ -44,6 +45,7 @@ interface AlbumMeta {
 interface BuiltAlbum extends Album {
   sortKey: string;
   country: string;
+  mm: string;
 }
 
 // Walk <baseDir>/<year>/<MM>/<country>/ and build one album per folder.
@@ -75,6 +77,7 @@ export function build(baseDir: string = memoriesDir): BuiltAlbum[] {
         albums.push({
           sortKey: year + mm,
           country,
+          mm,
           id: `${country}-${year}`,
           title: meta.title || titleCase(country),
           when: `${MONTHS[Number(mm) - 1]} ${year}`,
@@ -92,6 +95,11 @@ export function build(baseDir: string = memoriesDir): BuiltAlbum[] {
   }
   if (albums.length === 0)
     throw new Error("No albums found under public/memories/<year>/<month>/<country>/");
+  // Disambiguate collisions: a country with 2+ albums in one year would otherwise
+  // share the same <country>-<year> id, so append the month to each of those.
+  const idCounts = new Map<string, number>();
+  for (const a of albums) idCounts.set(a.id, (idCounts.get(a.id) ?? 0) + 1);
+  for (const a of albums) if (idCounts.get(a.id)! > 1) a.id = `${a.id}-${a.mm}`;
   // Newest first; same-month albums fall back to alphabetical country order.
   albums.sort((a, b) => b.sortKey.localeCompare(a.sortKey) || a.country.localeCompare(b.country));
   return albums;

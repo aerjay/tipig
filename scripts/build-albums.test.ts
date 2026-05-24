@@ -94,6 +94,21 @@ describe("build", () => {
     ]);
   });
 
+  it("appends the month to disambiguate a country with multiple albums in one year", () => {
+    makeAlbum("2025/12/united-kingdom", [[1, 1]]);
+    makeAlbum("2025/08/united-kingdom", [[1, 1]]);
+    makeAlbum("2025/01/united-kingdom", [[1, 1]]);
+    makeAlbum("2025/03/ireland", [[1, 1]]); // sole album that year keeps the clean id
+    const ids = build(root).map((a) => a.id);
+    expect(ids).toEqual([
+      "united-kingdom-2025-12",
+      "united-kingdom-2025-08",
+      "ireland-2025",
+      "united-kingdom-2025-01",
+    ]);
+    expect(new Set(ids).size).toBe(ids.length); // all unique
+  });
+
   it("skips image-less folders and ignores non-conforming directories", () => {
     makeAlbum("2020/02/italy", [[1, 1]]);
     makeAlbum("2021/05/ghost", [], { places: "nowhere" }); // album.json but no photos
