@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { transform } from "esbuild";
-import { build, serialize, titleCase } from "./build-albums";
+import { build, serialize, titleCase, sitemapPages, serializeSitemap, gitLastModified } from "./build-albums";
 import type { Album } from "../src/types";
 
 // A minimal JPEG: SOI + a SOF0 frame carrying the given pixel dimensions + EOI.
@@ -161,5 +161,69 @@ describe("serialize", () => {
     writeFileSync(file, js);
     const mod = await import(pathToFileURL(file).href);
     expect(mod.ALBUMS).toEqual([album]);
+  });
+});
+
+describe("sitemapPages", () => {
+  it("lists only the two crawlable routes — never a /travels/* album", () => {
+    const pages = sitemapPages(() => "2026-01-01");
+    expect(pages.map((p) => p.loc)).toEqual([
+      "https://www.tipg.kingham-italia.co.uk/",
+      "https://www.tipg.kingham-italia.co.uk/about",
+    ]);
+    expect(pages.some((p) => p.loc.includes("/travels/"))).toBe(false);
+  });
+
+  it("dates each page from the lookup, keyed by its underlying content path", () => {
+    const lookup = (p: string) => (p === "public/memories" ? "2026-06-06" : "2026-05-23");
+    expect(sitemapPages(lookup)).toEqual([
+      { loc: "https://www.tipg.kingham-italia.co.uk/", lastmod: "2026-06-06" },
+      { loc: "https://www.tipg.kingham-italia.co.uk/about", lastmod: "2026-05-23" },
+    ]);
+  });
+});
+
+describe("serializeSitemap", () => {
+  const pages = [
+    { loc: "https://www.tipg.kingham-italia.co.uk/", lastmod: "2026-06-06" },
+    { loc: "https://www.tipg.kingham-italia.co.uk/about", lastmod: "2026-05-23" },
+  ];
+
+  it("wraps every page in a <url> with <loc> + <lastmod>", () => {
+    const xml = serializeSitemap(pages);
+    expect((xml.match(/<url>/g) ?? []).length).toBe(2);
+    expect(xml).toContain("<loc>https://www.tipg.kingham-italia.co.uk/</loc>");
+    expect(xml).toContain("<lastmod>2026-06-06</lastmod>");
+    expect(xml).toContain("<loc>https://www.tipg.kingham-italia.co.uk/about</loc>");
+    expect(xml).toContain("<lastmod>2026-05-23</lastmod>");
+  });
+
+  it("emits a valid prolog + sitemap namespace", () => {
+    const xml = serializeSitemap(pages);
+    expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    expect(xml).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+    expect(xml.trimEnd().endsWith("</urlset>")).toBe(true);
+  });
+
+  it("omits <priority>/<changefreq> (Google ignores them)", () => {
+    const xml = serializeSitemap(pages);
+    expect(xml).not.toContain("<priority>");
+    expect(xml).not.toContain("<changefreq>");
+  });
+
+  it("renders an empty urlset without any <url> entries", () => {
+    const xml = serializeSitemap([]);
+    expect(xml).not.toContain("<url>");
+    expect(xml).toContain("<urlset");
+  });
+});
+
+describe("gitLastModified", () => {
+  it("reads the last-commit date (YYYY-MM-DD) for a tracked path", () => {
+    expect(gitLastModified("scripts/build-albums.ts", "FALLBACK")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("returns the fallback when a path has no commits", () => {
+    expect(gitLastModified("no/such/path-xyz-123", "2020-01-01")).toBe("2020-01-01");
   });
 });

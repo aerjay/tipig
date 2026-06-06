@@ -3,6 +3,7 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { TravelCard } from "../components/TravelCard";
 import { useViewportSize } from "../hooks/useViewportSize";
+import { useDocumentHead } from "../hooks/useDocumentHead";
 import { useGalleryNav } from "../lib/nav";
 import { bySize, pageX } from "../lib/responsive";
 
@@ -15,10 +16,17 @@ export default function Home() {
   const cols = bySize(size, 1, 2, 3);
   const gap = bySize(size, 26, 38, 64);
 
+  useDocumentHead({
+    title: "Tipig — A Travel Photo Journal",
+    description:
+      "A quiet gallery of imperfect, romanticized travel memories. Tipig (Hiligaynon): to preserve, keep, and guard well.",
+    path: "/",
+  });
+
   return (
     <>
       <Header view="home" />
-      <section style={{ padding: `${bySize(size, 28, 44, 64)}px ${pageX(size)}px 0` }}>
+      <main style={{ padding: `${bySize(size, 28, 44, 64)}px ${pageX(size)}px 0` }}>
         <div
           style={{
             display: "grid",
@@ -36,7 +44,7 @@ export default function Home() {
             />
           ))}
         </div>
-      </section>
+      </main>
       <Footer />
     </>
   );

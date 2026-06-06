@@ -5,6 +5,7 @@ import { AlbumTitle } from "../components/AlbumTitle";
 import { AlbumColumn } from "../components/AlbumColumn";
 import { PrevNext } from "../components/PrevNext";
 import { useViewportSize } from "../hooks/useViewportSize";
+import { useDocumentHead } from "../hooks/useDocumentHead";
 import { useGalleryNav, albumWithNeighbours } from "../lib/nav";
 
 interface AlbumProps {
@@ -23,6 +24,20 @@ export default function Album({ albumId, active = true }: AlbumProps) {
   const size = useViewportSize();
   const nav = useGalleryNav();
   const { album, prev, next } = albumWithNeighbours(albumId);
+
+  // Albums are Disallowed from crawling, so this isn't for search — it makes a
+  // shared album link render a correct title/preview. Gated on `active` so the
+  // outgoing layer during a transition can't clobber the head.
+  useDocumentHead(
+    active
+      ? {
+          title: `${album.title} — Tipig`,
+          description: `${album.title} · ${album.when} · ${album.places}.`,
+          path: `/travels/${album.id}`,
+          image: album.cover,
+        }
+      : null
+  );
 
   useEffect(() => {
     // Keyboard nav is desktop-only; mobile/tablet have no keyboard to drive it.
@@ -48,15 +63,17 @@ export default function Album({ albumId, active = true }: AlbumProps) {
   return (
     <>
       <Header view="album" />
-      <AlbumTitle album={album} size={size} />
-      <AlbumColumn album={album} size={size} />
-      <PrevNext
-        prev={prev}
-        next={next}
-        size={size}
-        onPrev={() => nav.prevAlbum(prev.id)}
-        onNext={() => nav.nextAlbum(next.id)}
-      />
+      <main>
+        <AlbumTitle album={album} size={size} />
+        <AlbumColumn album={album} size={size} />
+        <PrevNext
+          prev={prev}
+          next={next}
+          size={size}
+          onPrev={() => nav.prevAlbum(prev.id)}
+          onNext={() => nav.nextAlbum(next.id)}
+        />
+      </main>
       <Footer />
     </>
   );

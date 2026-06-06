@@ -3,6 +3,7 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { Rule } from "../components/Rule";
 import { useViewportSize } from "../hooks/useViewportSize";
+import { useDocumentHead } from "../hooks/useDocumentHead";
 import { bySize, pageX } from "../lib/responsive";
 
 // About: an artist statement presented like gallery wall text (SPEC §8).
@@ -11,6 +12,13 @@ import { bySize, pageX } from "../lib/responsive";
 export default function About() {
   const size = useViewportSize();
   const compact = size === "mobile";
+
+  useDocumentHead({
+    title: "About — Tipig",
+    description:
+      "Tipig (Hiligaynon, v.): to preserve and guard well. The story behind a quiet gallery of imperfect, romanticized travel memories.",
+    path: "/about",
+  });
 
   return (
     <>

@@ -10,7 +10,7 @@ export const ALBUMS: Album[] = [
     id: "australia-2026",
     title: "Australia",
     when: "April 2026",
-    places: "Kuala Lumpur · Putrajaya",
+    places: "Sydney",
     cover: "/memories/2026/04/australia/01.JPG",
     photos: [
       { src: "/memories/2026/04/australia/01.JPG", ratio: 0.749 },

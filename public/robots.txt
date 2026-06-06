@@ -1,0 +1,6 @@
+# https://www.tipg.kingham-italia.co.uk/robots.txt
+User-agent: *
+Allow: /
+Disallow: /travels/
+
+Sitemap: https://www.tipg.kingham-italia.co.uk/sitemap.xml
