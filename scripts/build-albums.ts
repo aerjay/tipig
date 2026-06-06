@@ -34,7 +34,7 @@ const SITE_URL = "https://www.tipg.kingham-italia.co.uk";
 const MONTHS = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"];
 
-const isImage = (f: string): boolean => /\.(jpe?g|png)$/i.test(f);
+const isImage = (f: string): boolean => /\.(jpe?g|png|avif)$/i.test(f);
 const subdirs = (d: string): string[] =>
   readdirSync(d, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
 export const titleCase = (slug: string): string =>

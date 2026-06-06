@@ -63,9 +63,67 @@ function makeJpeg(width: number, height: number, orientation?: number): Buffer {
   ]);
 }
 
+// AVIF (ISOBMFF): a tree of [size:u32][type:4cc][payload] boxes. We build the
+// smallest subtree measure() reads — meta → iprp → ipco → ispe (+ optional
+// irot) — plus a token ftyp so the format is recognised.
+function box(type: string, payload: Buffer): Buffer {
+  const b = Buffer.alloc(8 + payload.length);
+  b.writeUInt32BE(b.length, 0);
+  b.write(type, 4, "ascii");
+  payload.copy(b, 8);
+  return b;
+}
+
+// ImageSpatialExtentsProperty: 4-byte version/flags, then u32 width, u32 height.
+function ispe(width: number, height: number): Buffer {
+  const p = Buffer.alloc(12);
+  p.writeUInt32BE(width, 4);
+  p.writeUInt32BE(height, 8);
+  return box("ispe", p);
+}
+
+// ImageRotation: one byte whose low 2 bits are the 90°-step counter-clockwise.
+function irot(steps: number): Buffer {
+  return box("irot", Buffer.from([steps & 0x03]));
+}
+
+// Wrap properties as a full AVIF: ftyp + meta(FullBox) → iprp → ipco → props.
+function makeAvif(...props: Buffer[]): Buffer {
+  const ipco = box("ipco", Buffer.concat(props));
+  const iprp = box("iprp", ipco);
+  const meta = box("meta", Buffer.concat([Buffer.alloc(4), iprp])); // 4B version/flags
+  const ftyp = box("ftyp", Buffer.from("avif0000avif", "ascii"));
+  return Buffer.concat([ftyp, meta]);
+}
+
 describe("measure", () => {
   it("reads PNG dimensions from the IHDR chunk", () => {
     expect(measure(makePng(800, 600))).toEqual({ width: 800, height: 600 });
+  });
+
+  it("reads AVIF dimensions from the ispe box", () => {
+    expect(measure(makeAvif(ispe(1600, 1067)))).toEqual({ width: 1600, height: 1067 });
+  });
+
+  it("swaps AVIF width/height for 90°/270° irot (the browser auto-rotates)", () => {
+    for (const steps of [1, 3]) {
+      expect(measure(makeAvif(ispe(1600, 1067), irot(steps)))).toEqual({ width: 1067, height: 1600 });
+    }
+  });
+
+  it("does NOT swap AVIF for 0°/180° irot", () => {
+    for (const steps of [0, 2]) {
+      expect(measure(makeAvif(ispe(1600, 1067), irot(steps)))).toEqual({ width: 1600, height: 1067 });
+    }
+  });
+
+  it("picks the largest ispe when AVIF carries a thumbnail property too", () => {
+    // A small thumbnail ispe must not win over the main image's.
+    expect(measure(makeAvif(ispe(160, 107), ispe(1600, 1067)))).toEqual({ width: 1600, height: 1067 });
+  });
+
+  it("returns null for an AVIF whose ipco has no ispe", () => {
+    expect(measure(makeAvif(irot(1)))).toBeNull();
   });
 
   it("reads JPEG dimensions from the SOF frame", () => {

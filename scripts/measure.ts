@@ -94,9 +94,79 @@ function readPng(buf: Buffer): Dims | null {
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
+// --- AVIF (ISOBMFF) --------------------------------------------------------
+// AVIF wraps the image in an ISO Base Media File: a tree of [size:u32][type:4cc]
+// boxes. The pixel dimensions live in an `ispe` property nested under
+// meta → iprp → ipco, and an optional `irot` sibling records a 90° rotation the
+// browser applies on display (the AVIF analogue of EXIF orientation).
+interface Box {
+  type: string;
+  start: number; // first content byte (after the header)
+  end: number; // one past the last content byte
+}
+
+// Iterate the boxes lying in [start, end). Handles the 64-bit (size===1) and
+// to-EOF (size===0) length encodings; stops cleanly on a truncated/garbage box.
+function* boxes(buf: Buffer, start: number, end: number): Generator<Box> {
+  let off = start;
+  while (off + 8 <= end) {
+    let size = buf.readUInt32BE(off);
+    const type = buf.toString("ascii", off + 4, off + 8);
+    let header = 8;
+    if (size === 1) {
+      if (off + 16 > end) return;
+      // 53-bit safe: AVIF photo boxes are far below 2^53 bytes.
+      size = buf.readUInt32BE(off + 8) * 2 ** 32 + buf.readUInt32BE(off + 12);
+      header = 16;
+    } else if (size === 0) {
+      size = end - off;
+    }
+    if (size < header || off + size > end) return;
+    yield { type, start: off + header, end: off + size };
+    off += size;
+  }
+}
+
+// First child box of `type` within [start, end), or null.
+function firstBox(buf: Buffer, start: number, end: number, type: string): Box | null {
+  for (const b of boxes(buf, start, end)) if (b.type === type) return b;
+  return null;
+}
+
+function readAvif(buf: Buffer): Dims | null {
+  // `meta` is a FullBox, so its children begin 4 bytes (version+flags) in.
+  const meta = firstBox(buf, 0, buf.length, "meta");
+  if (!meta) return null;
+  const iprp = firstBox(buf, meta.start + 4, meta.end, "iprp");
+  if (!iprp) return null;
+  const ipco = firstBox(buf, iprp.start, iprp.end, "ipco");
+  if (!ipco) return null;
+
+  // ipco holds one property per item (main image, alpha, maybe a thumbnail).
+  // The largest `ispe` is the main image; `irot` carries its display rotation.
+  let dims: Dims | null = null;
+  let rotation = 0;
+  for (const p of boxes(buf, ipco.start, ipco.end)) {
+    if (p.type === "ispe" && p.start + 12 <= p.end) {
+      const w = buf.readUInt32BE(p.start + 4); // skip 4-byte version/flags
+      const h = buf.readUInt32BE(p.start + 8);
+      if (!dims || w * h > dims.width * dims.height) dims = { width: w, height: h };
+    } else if (p.type === "irot" && p.start < p.end) {
+      rotation = buf[p.start] & 0x03; // angle = rotation × 90° counter-clockwise
+    }
+  }
+  if (!dims) return null;
+  // 90°/270° rotations swap the displayed axes, mirroring the EXIF 5–8 case.
+  return rotation === 1 || rotation === 3
+    ? { width: dims.height, height: dims.width }
+    : dims;
+}
+
 export function measure(buf: Buffer): Dims | null {
   if (buf[0] === 0xff && buf[1] === 0xd8) return readJpeg(buf);
   if (buf[0] === 0x89 && buf.toString("ascii", 1, 4) === "PNG") return readPng(buf);
+  // ISOBMFF (AVIF/HEIF): the file opens with an `ftyp` box at offset 4.
+  if (buf.length >= 12 && buf.toString("ascii", 4, 8) === "ftyp") return readAvif(buf);
   return null;
 }
 
@@ -110,7 +180,7 @@ function walk(dir: string, base: string = dir): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) found.push(...walk(full, base));
-    else if (/\.(jpe?g|png)$/i.test(entry.name)) found.push(relative(base, full).split(sep).join("/"));
+    else if (/\.(jpe?g|png|avif)$/i.test(entry.name)) found.push(relative(base, full).split(sep).join("/"));
   }
   return found;
 }
