@@ -25,7 +25,8 @@ export default function Album({ albumId, active = true }: AlbumProps) {
   const { album, prev, next } = albumWithNeighbours(albumId);
 
   useEffect(() => {
-    if (!active) return;
+    // Keyboard nav is desktop-only; mobile/tablet have no keyboard to drive it.
+    if (!active || size !== "desktop") return;
     function handler(e: KeyboardEvent) {
       if (isTypingTarget(e.target)) return;
       if (e.key === "Escape") {
@@ -42,7 +43,7 @@ export default function Album({ albumId, active = true }: AlbumProps) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, album.id, prev.id, next.id]);
+  }, [active, size, album.id, prev.id, next.id]);
 
   return (
     <>

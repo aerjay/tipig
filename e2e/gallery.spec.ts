@@ -76,6 +76,61 @@ test.describe("Tipig gallery", () => {
     expect(navigations).toBe(1); // exactly one listener fired
   });
 
+  // The hover lift and keyboard nav are desktop-only (>= 1100px, the
+  // useViewportSize breakpoint). The default project viewport is 1280px, so the
+  // suite above already exercises the desktop path; these guards pin down the
+  // boundary in both directions.
+  test("lifts a photo on hover at desktop width", async ({ page }) => {
+    const richest = [...ALBUMS].sort((a, b) => b.photos.length - a.photos.length)[0];
+    await page.goto(`/travels/${richest.id}`);
+    const img = page.locator(".ph").first().locator("img");
+    await expect(img).toBeVisible();
+
+    const before = await img.evaluate((el) => getComputedStyle(el).transform);
+    await img.hover();
+    await page.waitForTimeout(800); // let the 700ms lift transition settle
+    const after = await img.evaluate((el) => getComputedStyle(el).transform);
+
+    expect(before).toBe("none"); // at rest the image carries no transform
+    expect(after).not.toBe("none"); // hover applies the lift
+  });
+
+  for (const { name, width } of [
+    { name: "mobile", width: 500 },
+    { name: "tablet", width: 900 },
+  ]) {
+    test.describe(`on ${name} (${width}px)`, () => {
+      test.use({ viewport: { width, height: 800 } });
+
+      test("ignores the arrow keys and Escape", async ({ page }) => {
+        const start = ALBUMS[0];
+        await page.goto(`/travels/${start.id}`);
+        await showsAlbum(page, start.title);
+
+        await page.keyboard.press("ArrowRight");
+        await page.keyboard.press("ArrowLeft");
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(200); // give any (unwanted) navigation time to fire
+
+        await expect(page).toHaveURL(new RegExp(`/travels/${start.id}$`));
+        await expect(page.locator("h1")).toHaveText(start.title);
+      });
+
+      test("does not lift a photo on hover", async ({ page }) => {
+        const richest = [...ALBUMS].sort((a, b) => b.photos.length - a.photos.length)[0];
+        await page.goto(`/travels/${richest.id}`);
+        const img = page.locator(".ph").first().locator("img");
+        await expect(img).toBeVisible();
+
+        await img.hover();
+        await page.waitForTimeout(800); // would-be lift transition window
+        const transform = await img.evaluate((el) => getComputedStyle(el).transform);
+
+        expect(transform).toBe("none"); // hover lift is suppressed below 1100px
+      });
+    });
+  }
+
   test("reaches the About page from the header", async ({ page }) => {
     await page.goto("/");
 
