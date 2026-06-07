@@ -39,10 +39,13 @@ img {
 }
 .ph img {
   transition: transform 700ms, filter 700ms;
-  will-change: transform;
 }
 /* Hover lift is desktop-only (>= 1100px, see useViewportSize). On mobile and
-   tablet there's no pointer to hover, so the effect is suppressed. */
+   tablet there's no pointer to hover, so the effect is suppressed.
+   `will-change` lives on :hover only — promoting one layer at the moment it's
+   needed. A static `will-change` here would force EVERY photo onto its own GPU
+   layer at once; on the big albums (Scotland ~318, Australia ~266) that exhausts
+   mobile GPU memory and crashes/flickers the page. */
 @media (min-width: 1100px) {
   .ph:hover {
     box-shadow: 0 36px 70px -28px rgba(0, 0, 0, 0.55);
@@ -50,6 +53,7 @@ img {
   .ph:hover img {
     transform: translateY(-4px) scale(1.012);
     filter: brightness(1.03);
+    will-change: transform;
   }
 }
 

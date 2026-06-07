@@ -128,6 +128,28 @@ test.describe("Tipig gallery", () => {
 
         expect(transform).toBe("none"); // hover lift is suppressed below 1100px
       });
+
+      test("does not force every photo onto its own GPU layer", async ({ page }) => {
+        // Regression guard: a blanket `will-change: transform` on `.ph img`
+        // promotes EVERY photo to its own compositor layer up front, regardless
+        // of whether it's on screen. On the big albums (Scotland ~318, Australia
+        // ~266) that demands hundreds of GPU backing stores at once, exhausting
+        // mobile GPU memory — the page flickers mid page-transition and Chrome
+        // crashes with "can't open this page". The hint must stay scoped to the
+        // desktop :hover lift, so below 1100px no photo carries it at rest.
+        const richest = [...ALBUMS].sort((a, b) => b.photos.length - a.photos.length)[0];
+        await page.goto(`/travels/${richest.id}`);
+        await expect(page.locator(".ph").first().locator("img")).toBeVisible();
+
+        // Checks every photo in the album, on-screen or not — off-screen forced
+        // layers were the crux of the crash. Dedupe so a failure prints the
+        // offending value(s) rather than hundreds of identical entries.
+        const willChanges = await page
+          .locator(".ph img")
+          .evaluateAll((els) => [...new Set(els.map((el) => getComputedStyle(el).willChange))]);
+
+        expect(willChanges).toEqual(["auto"]);
+      });
     });
   }
 
