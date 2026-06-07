@@ -21,6 +21,13 @@ Built from the design handoff in `TIPIG 1.2.zip` (see its `SPEC.md`) as a
 Vite + React + TypeScript single-page app — React Router for navigation,
 Framer Motion for the page transitions — deployed to Cloudflare Workers.
 
+The album view uses a **justified-strips layout** (the Flickr / Google Photos
+style): photos keep their native aspect ratio and flow into rows, where every row
+is scaled to fill the container width edge-to-edge and all photos in a row share
+one height. Photos read in filename order (left-to-right, top-to-bottom), but
+because each row holds a different number of photos depending on their shapes, it
+reads as strips rather than a fixed grid. Mobile falls back to a single column.
+
 ## Running it
 
 ```bash
@@ -40,7 +47,7 @@ npm run verify     # regenerate albums, then typecheck + unit + e2e (full gate)
 - **Unit (`npm test`)** — fast, in-Node tests of the pure logic, co-located as
   `*.test.ts` beside the code they cover: the justified-rows algorithm (tested
   against its invariants, not hard-coded pixels), date formatting, routing
-  helpers, and the album generator.
+  helpers, the `srcset` URL encoder, image measurement, and the album generator.
 - **End-to-end (`npm run test:e2e`)** — a thin Playwright net in `e2e/` covering
   what unit tests can't: real routing + deep links, the justified layout as
   measured by a real browser, keyboard navigation, and that no view logs an
@@ -53,22 +60,30 @@ npm run verify     # regenerate albums, then typecheck + unit + e2e (full gate)
   (justified-strips gallery), `About` (artist statement).
 - `src/App.tsx` — the page-transition controller (two-layer slide pair).
 - `src/components/`, `src/hooks/`, `src/theme.ts` — shared UI pieces (Header,
-  Footer, cards, album strips), viewport/reduced-motion hooks, and design tokens.
+  Footer, cards, album strips), the hooks (viewport size, reduced-motion, and
+  `useDocumentHead` for per-route `<title>`/description/Open Graph tags), and
+  design tokens.
 - `src/types.ts` — the shared domain types (`Album`, `Photo`, `Size`, `View`).
 - `src/lib/` — the pure helpers: `justified.ts` (the row-packing algorithm for
   the album view), `nav.ts` (route ↔ view matching + transition axis),
   `format.ts` (date formatting), and `responsive.ts` / `srcset.ts`
   (viewport-based sizing and `srcset` URL encoding for the responsive images).
 - `public/memories/<year>/<month>/<country>/` — one folder per album and the
-  source of truth: the photos as AVIF (`01.avif…`, numbered in display order),
+  source of truth: the photos as AVIF (`01.avif…`, sorted by filename — the album
+  reads in that sequence left-to-right, top-to-bottom),
   optionally a JPG/JPEG twin of the cover (`01.jpg` — served to non-mobile and
   used as the social-share image), plus an `album.json`. One country = one
   album; list its cities/towns in `places`.
 - `src/data/albums.ts` — **auto-generated; do not edit by hand.** Built from the
   folders above by `npm run build:albums` (which also runs automatically before
   `npm run dev`, `npm run build`, and `npm run verify`).
-- `scripts/build-albums.ts` — the generator. `scripts/measure.ts` reads image
-  aspect ratios (`npm run measure` to spot-check a folder). Both run via `tsx`.
+- `scripts/build-albums.ts` — the generator. Besides `src/data/albums.ts` it also
+  writes `public/sitemap.xml` (just the two crawlable routes — `/` and `/about` —
+  each stamped with the git last-modified date of its content). `scripts/measure.ts`
+  reads image aspect ratios (`npm run measure` to spot-check a folder). Both run via `tsx`.
+- `public/robots.txt`, `public/sitemap.xml` — SEO. `robots.txt` `Disallow`s
+  `/travels/*` (the per-album pages are intentionally not indexed), so the sitemap
+  lists only `/` and `/about`. `sitemap.xml` is auto-generated — see above.
 
 ### Adding an album
 
@@ -76,7 +91,11 @@ npm run verify     # regenerate albums, then typecheck + unit + e2e (full gate)
    digits, e.g. `public/memories/2027/03/japan/`.
 2. Drop the photos in as AVIF, named `01.avif`, `02.avif`, … **in the order you
    want them shown** — zero-pad to a consistent width so they sort correctly
-   (use `001.avif…` once an album has 100+ photos). `01` is the cover by default.
+   (use `001.avif…` once an album has 100+ photos). The album view is a
+   justified-strips layout, so photos repack into rows of varying counts to fill
+   each row's width; the *sequence* still follows the filenames (read
+   left-to-right, top-to-bottom), it just isn't a fixed numbered grid. `01` is the
+   cover by default.
    Optionally add a JPG/JPEG twin of the cover (e.g. `01.jpg`): it's served to
    non-mobile viewers and used as the social-share (Open Graph) image, while
    mobile gets the AVIF.
