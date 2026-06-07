@@ -55,10 +55,15 @@ npm run verify     # regenerate albums, then typecheck + unit + e2e (full gate)
 - `src/components/`, `src/hooks/`, `src/theme.ts` — shared UI pieces (Header,
   Footer, cards, album strips), viewport/reduced-motion hooks, and design tokens.
 - `src/types.ts` — the shared domain types (`Album`, `Photo`, `Size`, `View`).
-- `src/lib/justified.ts` — the row-packing algorithm for the album view.
+- `src/lib/` — the pure helpers: `justified.ts` (the row-packing algorithm for
+  the album view), `nav.ts` (route ↔ view matching + transition axis),
+  `format.ts` (date formatting), and `responsive.ts` / `srcset.ts`
+  (viewport-based sizing and `srcset` URL encoding for the responsive images).
 - `public/memories/<year>/<month>/<country>/` — one folder per album and the
-  source of truth: the photos (`01.jpeg…`, numbered in display order) plus an
-  `album.json`. One country = one album; list its cities/towns in `places`.
+  source of truth: the photos as AVIF (`01.avif…`, numbered in display order),
+  optionally a JPG/JPEG twin of the cover (`01.jpg` — served to non-mobile and
+  used as the social-share image), plus an `album.json`. One country = one
+  album; list its cities/towns in `places`.
 - `src/data/albums.ts` — **auto-generated; do not edit by hand.** Built from the
   folders above by `npm run build:albums` (which also runs automatically before
   `npm run dev`, `npm run build`, and `npm run verify`).
@@ -69,14 +74,18 @@ npm run verify     # regenerate albums, then typecheck + unit + e2e (full gate)
 
 1. Make the folder `public/memories/<year>/<month>/<country>/` — month is two
    digits, e.g. `public/memories/2027/03/japan/`.
-2. Drop the photos in, named `01.jpeg`, `02.jpeg`, … **in the order you want them
-   shown**. `01` is the cover by default.
+2. Drop the photos in as AVIF, named `01.avif`, `02.avif`, … **in the order you
+   want them shown** — zero-pad to a consistent width so they sort correctly
+   (use `001.avif…` once an album has 100+ photos). `01` is the cover by default.
+   Optionally add a JPG/JPEG twin of the cover (e.g. `01.jpg`): it's served to
+   non-mobile viewers and used as the social-share (Open Graph) image, while
+   mobile gets the AVIF.
 3. Add an `album.json` in that folder with the cities/towns:
    ```json
    { "places": "Tokyo · Kyoto" }
    ```
    Optional keys: `"title"` (override the auto Title-case, e.g. `"USA"`) and
-   `"cover"` (a different photo filename, e.g. `"03.jpeg"`).
+   `"cover"` (a different photo filename, e.g. `"03.avif"`).
 4. Run `npm run verify` — regenerates `src/data/albums.ts` from the folder,
    then runs typecheck + unit + e2e to confirm the new album is wired up.
    (To just preview it instead, `npm run dev` regenerates first too.)

@@ -2,7 +2,8 @@
 //
 // Source of truth is the filesystem: each album is a folder
 //   public/memories/<year>/<month>/<country>/
-// holding its photos (01.jpeg…, numbered in display order) and an album.json.
+// holding its photos as AVIF (01.avif…, numbered in display order), optionally a
+// JPG/JPEG twin of the cover (01.jpg), and an album.json.
 //
 // album.json supplies the only hand-authored field, `places`, plus optional
 // `title` / `cover` overrides. Everything else is derived:
