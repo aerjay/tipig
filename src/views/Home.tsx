@@ -35,11 +35,12 @@ export default function Home() {
             rowGap: gap,
           }}
         >
-          {ALBUMS.map((album) => (
+          {ALBUMS.map((album, i) => (
             <TravelCard
               key={album.id}
               album={album}
               size={size}
+              priority={i === 0}
               onOpen={() => nav.openAlbum(album.id)}
             />
           ))}

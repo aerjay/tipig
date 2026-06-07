@@ -7,12 +7,14 @@ interface TravelCardProps {
   album: Album;
   size: Size;
   onOpen: () => void;
+  // Set on the first card only: its cover is the home view's LCP image.
+  priority?: boolean;
 }
 
 // One album card: uniform 4:5 cover image + a quiet label row beneath. The
 // uniform cover aspect is intentional — it gives the home grid a salon-hang
 // regularity (SPEC §6, §13). Whole card is clickable.
-export function TravelCard({ album, size, onOpen }: TravelCardProps) {
+export function TravelCard({ album, size, onOpen, priority = false }: TravelCardProps) {
   const compact = size === "mobile";
   const coverSrc = album.cover || album.photos[0]?.src;
 
@@ -27,7 +29,7 @@ export function TravelCard({ album, size, onOpen }: TravelCardProps) {
       }}
     >
       <div style={{ boxShadow: D2.coverShadow }}>
-        <Placeholder src={coverSrc} aspect="4/5" alt={album.title} />
+        <Placeholder src={coverSrc} aspect="4/5" alt={album.title} priority={priority} />
       </div>
       <div
         style={{

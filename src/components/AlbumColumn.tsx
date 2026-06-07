@@ -80,7 +80,12 @@ function JustifiedRows({ photos, width, targetRowHeight, gutter, alt }: Justifie
                 overflow: "hidden",
               }}
             >
-              <Placeholder src={p.src} ratio={p.ratio} alt={alt} />
+              <Placeholder
+                src={p.src}
+                ratio={p.ratio}
+                alt={alt}
+                priority={ri === 0 && pi === 0}
+              />
             </div>
           ))}
         </div>
@@ -101,7 +106,7 @@ function PhotoColumn({ photos, gutter, alt }: PhotoColumnProps) {
     <div style={{ display: "flex", flexDirection: "column", gap: gutter }}>
       {photos.map((p, i) => (
         <div key={i} style={{ boxShadow: D2.photoShadow }}>
-          <Placeholder src={p.src} ratio={p.ratio} alt={alt} />
+          <Placeholder src={p.src} ratio={p.ratio} alt={alt} priority={i === 0} />
         </div>
       ))}
     </div>

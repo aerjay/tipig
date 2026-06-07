@@ -5,6 +5,11 @@ interface PlaceholderProps {
   ratio?: number;
   aspect?: string;
   alt?: string;
+  // The LCP image of a view (home's first cover, an album's first photo). It
+  // renders eagerly at high fetch priority and skips the scroll-in gate, so the
+  // browser starts fetching it from the initial paint rather than after React
+  // hydrates and the IntersectionObserver fires.
+  priority?: boolean;
 }
 
 // Renders a real <img> at a given aspect ratio and fades it up the first time
@@ -16,7 +21,7 @@ interface PlaceholderProps {
 //
 // `prefers-reduced-motion` is honoured purely in CSS (.ph override), which
 // pins opacity/transform and removes the transition.
-export function Placeholder({ src, ratio, aspect, alt = "" }: PlaceholderProps) {
+export function Placeholder({ src, ratio, aspect, alt = "", priority = false }: PlaceholderProps) {
   let ar: string;
   if (typeof ratio === "number" && isFinite(ratio) && ratio > 0) {
     ar = `${ratio}`;
@@ -27,10 +32,11 @@ export function Placeholder({ src, ratio, aspect, alt = "" }: PlaceholderProps) 
   }
 
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  // Priority images start visible (no fade-in wait) and never observe.
+  const [visible, setVisible] = useState(priority);
 
   useEffect(() => {
-    if (visible) return;
+    if (priority || visible) return;
     const node = wrapRef.current;
     if (!node) return;
     const io = new IntersectionObserver(
@@ -47,7 +53,7 @@ export function Placeholder({ src, ratio, aspect, alt = "" }: PlaceholderProps) 
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [visible]);
+  }, [priority, visible]);
 
   const fadeStyle: CSSProperties = {
     opacity: visible ? 1 : 0,
@@ -74,7 +80,8 @@ export function Placeholder({ src, ratio, aspect, alt = "" }: PlaceholderProps) 
         <img
           src={src}
           alt={alt}
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : undefined}
           decoding="async"
           style={{
             width: "100%",
