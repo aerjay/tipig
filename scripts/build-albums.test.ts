@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { execSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -18,6 +19,24 @@ function jpeg(width: number, height: number): Buffer {
   sof.writeUInt16BE(height, 5);
   sof.writeUInt16BE(width, 7);
   return Buffer.concat([Buffer.from([0xff, 0xd8]), sof, Buffer.from([0xff, 0xd9])]);
+}
+
+// A minimal AVIF (ISOBMFF): an `ftyp` box followed by meta → iprp → ipco → ispe
+// carrying the pixel dimensions, which is all measure() reads. Lets the tests
+// lay down real AVIF/JPG cover pairs.
+function avif(width: number, height: number): Buffer {
+  const box = (type: string, content: Buffer): Buffer => {
+    const header = Buffer.alloc(8);
+    header.writeUInt32BE(8 + content.length, 0);
+    header.write(type, 4, "ascii");
+    return Buffer.concat([header, content]);
+  };
+  const ispe = Buffer.alloc(12); // 4 bytes version/flags, then width + height
+  ispe.writeUInt32BE(width, 4);
+  ispe.writeUInt32BE(height, 8);
+  const ftyp = box("ftyp", Buffer.concat([Buffer.from("avif", "ascii"), Buffer.alloc(4)]));
+  const meta = box("meta", Buffer.concat([Buffer.alloc(4), box("iprp", box("ipco", box("ispe", ispe)))]));
+  return Buffer.concat([ftyp, meta]);
 }
 
 let root: string;
@@ -139,6 +158,80 @@ describe("build", () => {
   });
 });
 
+describe("cover format variants (AVIF/JPG split)", () => {
+  // Lay down an album with arbitrarily-named image files (mixed formats) + meta.
+  function makeMixed(
+    rel: string,
+    files: Record<string, Buffer>,
+    meta: Record<string, unknown> | null = { places: "Somewhere" }
+  ): string {
+    const dir = join(root, rel);
+    mkdirSync(dir, { recursive: true });
+    for (const [name, buf] of Object.entries(files)) writeFileSync(join(dir, name), buf);
+    if (meta !== null) writeFileSync(join(dir, "album.json"), JSON.stringify(meta));
+    return dir;
+  }
+
+  // THE BUG: a cover that exists as both 01.JPG and 01.avif must collapse to a
+  // SINGLE photo, not appear twice. Before the format-grouping fix, both files
+  // matched the image filter and 01 was emitted as two duplicate photos.
+  it("collapses a JPG+AVIF pair for one basename into a single photo (no duplicate)", () => {
+    makeMixed("2026/04/australia", {
+      "01.JPG": jpeg(800, 1000),
+      "01.avif": avif(800, 1000),
+      "02.avif": avif(1500, 1000),
+    });
+    const [album] = build(root);
+    expect(album.photos).toEqual([
+      // 01 appears once, as the AVIF (preferred for the in-page <img>) — not twice
+      { src: "/memories/2026/04/australia/01.avif", ratio: 0.8 },
+      { src: "/memories/2026/04/australia/02.avif", ratio: 1.5 },
+    ]);
+    expect(album.photos.filter((p) => p.src.includes("/01.")).length).toBe(1);
+  });
+
+  it("derives cover from the JPG (for OG) and coverAvif from the AVIF", () => {
+    makeMixed("2026/04/australia", {
+      "01.JPG": jpeg(800, 1000),
+      "01.avif": avif(800, 1000),
+    });
+    const [album] = build(root);
+    expect(album.cover).toBe("/memories/2026/04/australia/01.JPG");
+    expect(album.coverAvif).toBe("/memories/2026/04/australia/01.avif");
+  });
+
+  it("omits coverAvif when the cover has no AVIF variant", () => {
+    makeMixed("2020/02/italy", { "01.jpeg": jpeg(1000, 1500) });
+    const [album] = build(root);
+    expect(album.cover).toBe("/memories/2020/02/italy/01.jpeg");
+    expect(album.coverAvif).toBeUndefined();
+  });
+
+  it("falls back to the AVIF for `cover` when the cover has no JPG variant", () => {
+    // e.g. an album whose first photo is AVIF-only — cover is the AVIF and there
+    // is no separate JPG to advertise, so coverAvif stays absent.
+    makeMixed("2021/05/england", { "02.avif": avif(1000, 1500), "03.avif": avif(1000, 1500) });
+    const [album] = build(root);
+    expect(album.cover).toBe("/memories/2021/05/england/02.avif");
+    expect(album.coverAvif).toBeUndefined();
+  });
+
+  it("honours an album.json cover override across both formats", () => {
+    makeMixed(
+      "2024/06/japan",
+      {
+        "01.avif": avif(1, 1),
+        "02.JPG": jpeg(1, 1),
+        "02.avif": avif(1, 1),
+      },
+      { places: "Tokyo", cover: "02.avif" }
+    );
+    const [album] = build(root);
+    expect(album.cover).toBe("/memories/2024/06/japan/02.JPG");
+    expect(album.coverAvif).toBe("/memories/2024/06/japan/02.avif");
+  });
+});
+
 describe("serialize", () => {
   it("emits an AUTO-GENERATED module that round-trips to the same data", async () => {
     const album: Album = {
@@ -146,12 +239,14 @@ describe("serialize", () => {
       title: "Japan",
       when: "March 2027",
       places: "Tokyo · Kyoto",
-      cover: "/memories/2027/03/japan/01.jpeg",
-      photos: [{ src: "/memories/2027/03/japan/01.jpeg", ratio: 0.6667 }],
+      cover: "/memories/2027/03/japan/01.JPG",
+      coverAvif: "/memories/2027/03/japan/01.avif",
+      photos: [{ src: "/memories/2027/03/japan/01.avif", ratio: 0.6667 }],
     };
     const code = serialize([album]);
     expect(code).toContain("AUTO-GENERATED");
     expect(code).toMatch(/export const ALBUMS/);
+    expect(code).toContain('coverAvif: "/memories/2027/03/japan/01.avif"');
 
     // The emitted module is TypeScript (typed import + annotation). Compile it
     // to JS the way the toolchain does, then import it back: the generated
@@ -161,6 +256,19 @@ describe("serialize", () => {
     writeFileSync(file, js);
     const mod = await import(pathToFileURL(file).href);
     expect(mod.ALBUMS).toEqual([album]);
+  });
+
+  it("omits the coverAvif line for an album that has none", () => {
+    const album: Album = {
+      id: "italy-2020",
+      title: "Italy",
+      when: "February 2020",
+      places: "Roma",
+      cover: "/memories/2020/02/italy/01.jpeg",
+      photos: [{ src: "/memories/2020/02/italy/01.jpeg", ratio: 0.6667 }],
+    };
+    const code = serialize([album]);
+    expect(code).not.toContain("coverAvif");
   });
 });
 
@@ -219,11 +327,43 @@ describe("serializeSitemap", () => {
 });
 
 describe("gitLastModified", () => {
+  // A throwaway git repo with a fixed committer date, so these tests own their
+  // data and never read this project's real history. GIT_*_DATE uses local time
+  // (no offset) so the rendered %cs date matches what we wrote regardless of the
+  // machine's timezone.
+  function seedRepo(): string {
+    const repo = mkdtempSync(join(tmpdir(), "tipig-git-"));
+    execSync("git init -q", { cwd: repo });
+    return repo;
+  }
+  const COMMIT_ENV = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "t",
+    GIT_AUTHOR_EMAIL: "t@example.com",
+    GIT_COMMITTER_NAME: "t",
+    GIT_COMMITTER_EMAIL: "t@example.com",
+    GIT_AUTHOR_DATE: "2021-07-15T12:00:00",
+    GIT_COMMITTER_DATE: "2021-07-15T12:00:00",
+  };
+
   it("reads the last-commit date (YYYY-MM-DD) for a tracked path", () => {
-    expect(gitLastModified("scripts/build-albums.ts", "FALLBACK")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const repo = seedRepo();
+    try {
+      writeFileSync(join(repo, "tracked.txt"), "hi");
+      execSync("git add tracked.txt", { cwd: repo });
+      execSync("git commit -q -m seed", { cwd: repo, env: COMMIT_ENV });
+      expect(gitLastModified("tracked.txt", "FALLBACK", repo)).toBe("2021-07-15");
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
   });
 
   it("returns the fallback when a path has no commits", () => {
-    expect(gitLastModified("no/such/path-xyz-123", "2020-01-01")).toBe("2020-01-01");
+    const repo = seedRepo();
+    try {
+      expect(gitLastModified("no/such/path-xyz-123", "2020-01-01", repo)).toBe("2020-01-01");
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
   });
 });

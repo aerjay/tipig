@@ -14,7 +14,12 @@ export interface Album {
   title: string;
   when: string;
   places: string;
+  // The home-grid cover. `cover` is a JPG (served to non-mobile and used as the
+  // OG share image, which link-preview scrapers render more reliably than AVIF);
+  // `coverAvif`, when present, is the AVIF the grid serves to mobile via
+  // <picture>. Absent when the album has no JPG/AVIF pair for its cover.
   cover: string;
+  coverAvif?: string;
   photos: Photo[];
 }
 

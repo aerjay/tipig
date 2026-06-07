@@ -62,8 +62,8 @@ export function build(baseDir: string = memoriesDir): BuiltAlbum[] {
       for (const country of subdirs(join(baseDir, year, mm))) {
         const rel = `${year}/${mm}/${country}`;
         const dir = join(baseDir, rel);
-        const photos = readdirSync(dir).filter(isImage).sort();
-        if (photos.length === 0) continue;
+        const files = readdirSync(dir).filter(isImage).sort();
+        if (files.length === 0) continue;
 
         const metaPath = join(dir, "album.json");
         if (!existsSync(metaPath)) throw new Error(`${rel}: missing album.json`);
@@ -76,9 +76,27 @@ export function build(baseDir: string = memoriesDir): BuiltAlbum[] {
         if (typeof meta.places !== "string" || !meta.places.trim())
           throw new Error(`${rel}/album.json: "places" is required`);
 
-        const cover = meta.cover || photos[0];
-        if (!photos.includes(cover))
-          throw new Error(`${rel}/album.json: cover "${cover}" is not a photo in this folder`);
+        // A photo may live in two formats — e.g. 01.JPG (cover served to
+        // non-mobile + the OG share image) and 01.avif (cover served to mobile).
+        // Group files by basename so each becomes a single photo entry; the
+        // in-page <img> prefers AVIF, while the JPG drives `cover`/OG.
+        const byBase = new Map<string, string[]>();
+        for (const f of files) {
+          const base = f.replace(/\.[^.]+$/, "");
+          (byBase.get(base) ?? byBase.set(base, []).get(base)!).push(f);
+        }
+        const bases = [...byBase.keys()].sort();
+        const avifOf = (fs: string[]): string | undefined => fs.find((f) => /\.avif$/i.test(f));
+        const jpgOf = (fs: string[]): string | undefined => fs.find((f) => /\.jpe?g$/i.test(f));
+
+        // The cover basename: an explicit album.json override (by filename), else
+        // the first photo. `cover` prefers the JPG; `coverAvif` is the mobile AVIF.
+        const coverBase = (meta.cover ?? bases[0]).replace(/\.[^.]+$/, "");
+        if (!byBase.has(coverBase))
+          throw new Error(`${rel}/album.json: cover "${meta.cover}" is not a photo in this folder`);
+        const coverFiles = byBase.get(coverBase)!;
+        const coverJpg = jpgOf(coverFiles);
+        const coverAvif = avifOf(coverFiles);
 
         albums.push({
           sortKey: year + mm,
@@ -88,8 +106,11 @@ export function build(baseDir: string = memoriesDir): BuiltAlbum[] {
           title: meta.title || titleCase(country),
           when: `${MONTHS[Number(mm) - 1]} ${year}`,
           places: meta.places,
-          cover: `/memories/${rel}/${cover}`,
-          photos: photos.map((file) => {
+          cover: `/memories/${rel}/${coverJpg ?? coverAvif ?? coverFiles[0]}`,
+          ...(coverJpg && coverAvif ? { coverAvif: `/memories/${rel}/${coverAvif}` } : {}),
+          photos: bases.map((base) => {
+            const group = byBase.get(base)!;
+            const file = avifOf(group) ?? group[0]; // prefer AVIF for the in-page <img>
             const dims = measure(readFileSync(join(dir, file)));
             if (!dims || !dims.width || !dims.height)
               throw new Error(`${rel}/${file}: unreadable image`);
@@ -121,6 +142,7 @@ export function serialize(albums: Album[]): string {
       `    when: ${q(a.when)},`,
       `    places: ${q(a.places)},`,
       `    cover: ${q(a.cover)},`,
+      ...(a.coverAvif ? [`    coverAvif: ${q(a.coverAvif)},`] : []),
       "    photos: [",
       ...a.photos.map((p) => `      { src: ${q(p.src)}, ratio: ${p.ratio} },`),
       "    ],",
@@ -150,11 +172,13 @@ interface SitemapPage {
 
 // Last git commit date (YYYY-MM-DD) that touched a path, e.g. the album photos
 // behind "/" or the About copy behind "/about". Falls back to `fallback` when
-// git is unavailable (shallow clone / no VCS) so the build never breaks.
-export function gitLastModified(relPath: string, fallback: string): string {
+// git is unavailable (shallow clone / no VCS) so the build never breaks. `cwd`
+// defaults to the repo root; it's a parameter so tests can point it at a
+// throwaway repo instead of this project's real history.
+export function gitLastModified(relPath: string, fallback: string, cwd: string = root): string {
   try {
     const out = execSync(`git log -1 --format=%cs -- "${relPath}"`, {
-      cwd: root,
+      cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();

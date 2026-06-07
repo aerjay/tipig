@@ -16,7 +16,12 @@ interface TravelCardProps {
 // regularity (SPEC §6, §13). Whole card is clickable.
 export function TravelCard({ album, size, onOpen, priority = false }: TravelCardProps) {
   const compact = size === "mobile";
-  const coverSrc = album.cover || album.photos[0]?.src;
+  // AVIF drives the in-page <img> (mobile + the mobile LCP fetch); the JPG is the
+  // non-mobile <picture> source (+ OG image). Fall back to whichever exists. The
+  // <picture> fetches exactly one format per viewport — the media-scoped LCP
+  // preloads in vite.config keep the priority card's fetch matched to it.
+  const coverSrc = album.coverAvif ?? album.cover ?? album.photos[0]?.src;
+  const coverJpg = album.coverAvif ? album.cover : undefined;
 
   return (
     <article
@@ -29,7 +34,7 @@ export function TravelCard({ album, size, onOpen, priority = false }: TravelCard
       }}
     >
       <div style={{ boxShadow: D2.coverShadow }}>
-        <Placeholder src={coverSrc} aspect="4/5" alt={album.title} priority={priority} />
+        <Placeholder src={coverSrc} jpgSrc={coverJpg} aspect="4/5" alt={album.title} priority={priority} />
       </div>
       <div
         style={{

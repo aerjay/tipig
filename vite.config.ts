@@ -10,25 +10,42 @@ import { ALBUMS } from "./src/data/albums";
 // React to hydrate and the IntersectionObserver to fire (see Placeholder's
 // `priority`). Album deep-links share this static HTML and pay a small unused
 // preload, but "/" is the primary route and the only one search/PSI hit.
+//
+// The cover is served responsively (Placeholder's <picture>): AVIF to mobile,
+// JPG to non-mobile. So the preload is media-scoped to match — each viewport
+// preloads only the one format it actually paints, with no double fetch. The
+// media boundary here must stay in sync with the <source> in Placeholder.
+const PRELOAD_BREAKPOINT = 768;
 function preloadLcpCover(): Plugin {
-  const cover = ALBUMS[0]?.cover;
-  const type = cover?.endsWith(".avif")
-    ? "image/avif"
-    : cover?.endsWith(".png")
-      ? "image/png"
-      : "image/jpeg";
+  const jpg = ALBUMS[0]?.cover;
+  const avif = ALBUMS[0]?.coverAvif;
+  const typeOf = (href: string): string =>
+    href.endsWith(".avif") ? "image/avif" : href.endsWith(".png") ? "image/png" : "image/jpeg";
+  const preload = (href: string, media?: string) => ({
+    tag: "link",
+    attrs: {
+      rel: "preload",
+      as: "image",
+      href,
+      type: typeOf(href),
+      fetchpriority: "high",
+      ...(media ? { media } : {}),
+    },
+    injectTo: "head" as const,
+  });
   return {
     name: "preload-lcp-cover",
-    transformIndexHtml: () =>
-      cover
+    transformIndexHtml: () => {
+      if (!jpg) return [];
+      // With both formats, preload each behind the matching media query; with
+      // only one, preload it unconditionally.
+      return avif
         ? [
-            {
-              tag: "link",
-              attrs: { rel: "preload", as: "image", href: cover, type, fetchpriority: "high" },
-              injectTo: "head",
-            },
+            preload(avif, `(max-width: ${PRELOAD_BREAKPOINT - 1}px)`),
+            preload(jpg, `(min-width: ${PRELOAD_BREAKPOINT}px)`),
           ]
-        : [],
+        : [preload(jpg)];
+    },
   };
 }
 

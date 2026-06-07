@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { srcsetUrl } from "../lib/srcset";
 
 interface PlaceholderProps {
+  // The in-page <img>. For covers this is the AVIF, so mobile (and the eager
+  // LCP fetch) only ever pulls the light format; for album photos it's the only
+  // format. Required to render anything.
   src?: string;
+  // Optional JPG variant, served to non-mobile (>= 768px) via a <picture>
+  // <source>. The JPG never matches on mobile, so mobile can't fetch it; it also
+  // doubles as the OG share image (set separately, from Album.cover). No-op when
+  // absent — a plain <img src> is rendered.
+  jpgSrc?: string;
   ratio?: number;
   aspect?: string;
   alt?: string;
@@ -21,7 +30,7 @@ interface PlaceholderProps {
 //
 // `prefers-reduced-motion` is honoured purely in CSS (.ph override), which
 // pins opacity/transform and removes the transition.
-export function Placeholder({ src, ratio, aspect, alt = "", priority = false }: PlaceholderProps) {
+export function Placeholder({ src, jpgSrc, ratio, aspect, alt = "", priority = false }: PlaceholderProps) {
   let ar: string;
   if (typeof ratio === "number" && isFinite(ratio) && ratio > 0) {
     ar = `${ratio}`;
@@ -77,19 +86,30 @@ export function Placeholder({ src, ratio, aspect, alt = "", priority = false }: 
       }}
     >
       {src && (
-        <img
-          src={src}
-          alt={alt}
-          loading={priority ? "eager" : "lazy"}
-          fetchPriority={priority ? "high" : undefined}
-          decoding="async"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-        />
+        <picture>
+          {/* Non-mobile (>= 768px) gets the JPG source; mobile falls through to
+              the AVIF <img>, which also carries loading/fetchPriority for the LCP
+              fetch. Keeping AVIF as the <img> means the preload scanner can't
+              double-fetch a heavier JPG fallback on mobile. srcsetUrl encodes
+              spaces/commas so a path like ".../united states/..." isn't mangled
+              by srcset's delimiter rules (which would drop the JPG source). */}
+          {jpgSrc && (
+            <source srcSet={srcsetUrl(jpgSrc)} media="(min-width: 768px)" type="image/jpeg" />
+          )}
+          <img
+            src={src}
+            alt={alt}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : undefined}
+            decoding="async"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        </picture>
       )}
     </div>
   );
