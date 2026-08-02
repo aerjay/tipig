@@ -6,7 +6,7 @@
 //       - destination = Home/About -> vertical slide
 //   • a DIRECTION (forward / back), which is intent we attach to the
 //     navigation via React Router's location state.
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { ALBUMS } from "../data/albums";
 import type { Album, View } from "../types";
 
