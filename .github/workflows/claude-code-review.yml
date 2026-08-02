@@ -35,7 +35,15 @@ jobs:
         id: claude-review
         uses: anthropics/claude-code-action@v1
         with:
+          # Dependabot-triggered runs read from the Dependabot secret store,
+          # not the repository one, so this needs its own copy of the token:
+          #   gh secret set CLAUDE_CODE_OAUTH_TOKEN --app dependabot
+          # Without it the input resolves empty and the review can't authenticate.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The action refuses bot actors unless they're listed here. Both forms
+          # are given because the docs use the [bot] suffix while the rejection
+          # message reports the actor as bare "dependabot".
+          allowed_bots: 'dependabot[bot],dependabot'
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
