@@ -1,4 +1,4 @@
-import { test, expect, showsAlbum, ALBUMS, neighbours } from "./fixtures";
+import { test, expect, showsAlbum, midTransition, ALBUMS, neighbours } from "./fixtures";
 
 test.describe("Tipig gallery", () => {
   test("opens an album from the Travels grid", async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe("Tipig gallery", () => {
     await expect(page.locator("h1")).toHaveText(start.title);
 
     await page.keyboard.press("ArrowRight"); // start -> second
-    await page.waitForTimeout(120); // land the next press firmly inside the slide
+    await midTransition(page); // both albums mounted: firmly inside the slide
     const before = await page.evaluate(() => history.length);
 
     await page.keyboard.press("ArrowRight"); // one press, mid-transition

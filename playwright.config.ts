@@ -10,6 +10,10 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  // These specs gate auto-merge on main, so a single timing blip shouldn't
+  // fail a release. Retries stay off locally, where a flake is a bug worth
+  // seeing rather than papering over.
+  retries: process.env.CI ? 2 : 0,
   reporter: "list",
   use: {
     baseURL: "http://localhost:5173",
