@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
-import { useLocation, type Location } from "react-router-dom";
+import { useLocation, type Location } from "react-router";
 import { motion } from "framer-motion";
 import { D2 } from "./theme";
 import { matchView, axisFor, type Axis, type Dir } from "./lib/nav";
