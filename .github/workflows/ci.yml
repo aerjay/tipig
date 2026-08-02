@@ -1,0 +1,44 @@
+name: CI
+
+# The regression gate. Runs the same `npm run verify` used locally —
+# typecheck, then vitest, then the Playwright pass — so one green check here
+# means the branch compiles and still behaves. Making this a required check on
+# main is what turns Dependabot auto-merge from "merge it" into "merge it if
+# the suite passes".
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push supersedes the run already in flight for the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      # Shallow is fine: build-albums' gitLastModified() falls back cleanly
+      # when history is missing, and only the generated sitemap dates depend
+      # on it. Cloudflare Workers Builds produces the deployed artifact.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # playwright.config.ts declares a single chromium project.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # `preverify` regenerates src/data/albums.ts from public/memories first,
+      # so a photo added without rerunning build:albums fails here rather than
+      # silently shipping a stale album list.
+      - run: npm run verify

@@ -1,0 +1,42 @@
+name: Dependabot auto-merge
+
+# Switches on GitHub's native auto-merge for the Dependabot PRs whose blast
+# radius is small. Auto-merge queues the PR and waits for the required checks,
+# so the actual decision belongs to them, not to this file. Both are required
+# on main by the `main-branch` ruleset:
+#
+#   verify               — typecheck + vitest + Playwright (ci.yml)
+#   Workers Builds: tipig — Cloudflare's build of the branch
+#
+# That pairing is load-bearing. With no required check, `gh pr merge --auto`
+# merges immediately and this workflow becomes an unconditional merger.
+on: pull_request
+
+# Workflow runs triggered by Dependabot get a read-only GITHUB_TOKEN by
+# default; this block grants the write scope `gh pr merge` needs.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Patch and minor only. A semver major on react, vite or wrangler can
+      # pass the whole suite and still change behaviour these tests don't
+      # reach, so majors stay open for a human to look at.
+      - name: Enable auto-merge
+        if: |
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
