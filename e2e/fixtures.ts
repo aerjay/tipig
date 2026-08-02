@@ -51,3 +51,14 @@ export async function showsAlbum(page: Page, title: string): Promise<void> {
     title
   );
 }
+
+// The inverse of showsAlbum: wait until the slide is genuinely in flight, with
+// the outgoing and incoming album both mounted. Two headings *is* that state,
+// so this is the precondition a mid-transition interaction needs. Waiting for
+// it beats sleeping a fixed number of milliseconds, which on a loaded machine
+// can elapse before the incoming view has taken over the key listener — the
+// press then lands on the outgoing album and the test navigates somewhere the
+// assertion never expected.
+export async function midTransition(page: Page): Promise<void> {
+  await page.waitForFunction(() => document.querySelectorAll("h1").length === 2);
+}
